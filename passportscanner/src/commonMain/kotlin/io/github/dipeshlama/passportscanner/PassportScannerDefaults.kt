@@ -10,7 +10,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
@@ -24,6 +26,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import io.github.dipeshlama.passportscanner.internal.ScannerIcons
@@ -46,8 +51,112 @@ class PassportScannerColors(
     val chipBackground: Color,
 )
 
+/**
+ * Colours of the bottom sheets (review, unreadable passport and tips).
+ * Create with [PassportScannerDefaults.sheetColors].
+ *
+ * @property container sheet background.
+ * @property scrim dimmed area behind the sheet.
+ * @property dragHandle the handle at the top of the sheet.
+ * @property title sheet titles.
+ * @property body descriptions and tips.
+ * @property label field labels in the review sheet.
+ * @property value field values in the review sheet.
+ * @property divider lines between review fields.
+ * @property primaryButtonContainer background of the main button ("Confirm", "Try again").
+ * @property primaryButtonContent text of the main button.
+ * @property secondaryButtonContent text and outline of the other buttons ("Re-scan", "Got it").
+ * @property accent highlight around the MRZ in the tips illustration.
+ */
+@Immutable
+class PassportScannerSheetColors(
+    val container: Color,
+    val scrim: Color,
+    val dragHandle: Color,
+    val title: Color,
+    val body: Color,
+    val label: Color,
+    val value: Color,
+    val divider: Color,
+    val primaryButtonContainer: Color,
+    val primaryButtonContent: Color,
+    val secondaryButtonContent: Color,
+    val accent: Color,
+)
+
+/**
+ * Text styles of the bottom sheets. Set a `fontFamily` on these to use your own font.
+ * Create with [PassportScannerDefaults.sheetTypography].
+ *
+ * @property title sheet titles.
+ * @property body descriptions and tips.
+ * @property label field labels in the review sheet.
+ * @property value field values in the review sheet.
+ * @property button button text.
+ */
+@Immutable
+class PassportScannerSheetTypography(
+    val title: TextStyle,
+    val body: TextStyle,
+    val label: TextStyle,
+    val value: TextStyle,
+    val button: TextStyle,
+)
+
 /** Default colours and UI pieces of [PassportScanner], for use in custom slots. */
 object PassportScannerDefaults {
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Composable
+    fun sheetColors(
+        container: Color = BottomSheetDefaults.ContainerColor,
+        scrim: Color = BottomSheetDefaults.ScrimColor,
+        dragHandle: Color = MaterialTheme.colorScheme.onSurfaceVariant,
+        title: Color = MaterialTheme.colorScheme.onSurface,
+        body: Color = MaterialTheme.colorScheme.onSurfaceVariant,
+        label: Color = MaterialTheme.colorScheme.onSurfaceVariant,
+        value: Color = MaterialTheme.colorScheme.onSurface,
+        divider: Color = MaterialTheme.colorScheme.outlineVariant,
+        primaryButtonContainer: Color = MaterialTheme.colorScheme.primary,
+        primaryButtonContent: Color = MaterialTheme.colorScheme.onPrimary,
+        secondaryButtonContent: Color = MaterialTheme.colorScheme.primary,
+        accent: Color = MaterialTheme.colorScheme.primary,
+    ): PassportScannerSheetColors = PassportScannerSheetColors(
+        container = container,
+        scrim = scrim,
+        dragHandle = dragHandle,
+        title = title,
+        body = body,
+        label = label,
+        value = value,
+        divider = divider,
+        primaryButtonContainer = primaryButtonContainer,
+        primaryButtonContent = primaryButtonContent,
+        secondaryButtonContent = secondaryButtonContent,
+        accent = accent,
+    )
+
+    /**
+     * Pass [fontFamily] to change the font of every sheet text at once, or override single styles.
+     */
+    @Composable
+    fun sheetTypography(
+        fontFamily: FontFamily? = null,
+        title: TextStyle = MaterialTheme.typography.titleLarge,
+        body: TextStyle = MaterialTheme.typography.bodyMedium,
+        label: TextStyle = MaterialTheme.typography.bodyMedium,
+        value: TextStyle = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+        button: TextStyle = MaterialTheme.typography.labelLarge,
+    ): PassportScannerSheetTypography {
+        fun TextStyle.withFont() = if (fontFamily != null) copy(fontFamily = fontFamily) else this
+        return PassportScannerSheetTypography(
+            title = title.withFont(),
+            body = body.withFont(),
+            label = label.withFont(),
+            value = value.withFont(),
+            button = button.withFont(),
+        )
+    }
+
     @Composable
     fun colors(
         scanLine: Color = MaterialTheme.colorScheme.primary,

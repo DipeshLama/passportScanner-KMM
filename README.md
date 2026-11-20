@@ -8,6 +8,15 @@ A Kotlin Multiplatform / Compose Multiplatform library that scans passports on *
 - Camera permission handling, an optional review sheet and a tips sheet, with all text replaceable for localisation
 - OCR runs on the device: ML Kit on Android, Apple Vision on iOS. Nothing is sent over the network.
 
+## Supported platforms
+
+| Platform | Target | Minimum version | Camera / OCR |
+|---|---|---|---|
+| Android | `android` | API 24 (Android 7.0) | CameraX + ML Kit Text Recognition |
+| iOS (device) | `iosArm64` | iOS 14 | AVFoundation + Apple Vision |
+
+Desktop (JVM), web (JS/Wasm) and `iosX64` (Intel simulators) are not supported.
+
 ## Installation
 
 ```kotlin
@@ -20,8 +29,6 @@ kotlin {
     }
 }
 ```
-
-Supported targets: `android` (minSdk 24), `iosArm64`, `iosSimulatorArm64`.
 
 ### Platform setup
 
@@ -40,7 +47,7 @@ The gallery uses `PHPickerViewController`, which needs no photo library permissi
 
 ```kotlin
 @Composable
-fun PassengerScreen() {
+fun ScanPassportScreen() {
     var scanning by remember { mutableStateOf(false) }
 
     if (scanning) {
@@ -89,11 +96,11 @@ PassportScanner(
 )
 ```
 
-Typography and button colours come from your `MaterialTheme`.
+By default, sheet colours and fonts come from your `MaterialTheme`; see [Sheet colours and fonts](#sheet-colours-and-fonts) to change them.
 
 ### Customising the UI
 
-There are three levels; use whichever is enough.
+There are four levels; use whichever is enough.
 
 **1. Text:** pass `strings = PassportScannerStrings(...)` and override any field.
 
@@ -108,7 +115,9 @@ colors = PassportScannerDefaults.colors(
 )
 ```
 
-**3. Slots:** replace a piece of the UI with your own composable. Leave a slot `null` (the default) to keep the built-in one:
+**3. Sheet colours and fonts:** see [below](#sheet-colours-and-fonts).
+
+**4. Slots:** replace a piece of the UI with your own composable. Leave a slot `null` (the default) to keep the built-in one:
 
 ```kotlin
 PassportScanner(
@@ -136,6 +145,46 @@ PassportScanner(
 
 Slots are drawn over the camera with `LocalContentColor` set to `colors.content`, so plain `Text`/`Icon` are readable without extra styling. The built-in pieces are public in `PassportScannerDefaults` (`Title`, `Instruction`, `GalleryButton`, `CaptureButton`, `CaptureHint`), so you can reuse or wrap them instead of starting from scratch.
 
+### Sheet colours and fonts
+
+The review, "couldn't read" and tips sheets take their own colours and text styles. Every parameter defaults to your `MaterialTheme`, so override only what you need:
+
+```kotlin
+val myFont = FontFamily(Font(Res.font.inter_regular), Font(Res.font.inter_medium, FontWeight.Medium))
+
+PassportScanner(
+    onResult = { /* ... */ },
+    onCancel = { /* ... */ },
+    sheetColors = PassportScannerDefaults.sheetColors(
+        container = Color(0xFF1C1B1F),
+        title = Color.White,
+        body = Color(0xFFCAC4D0),
+        label = Color(0xFFCAC4D0),
+        value = Color.White,
+        divider = Color(0xFF49454F),
+        primaryButtonContainer = Color(0xFF00C853),
+        primaryButtonContent = Color.Black,
+        secondaryButtonContent = Color(0xFF00C853),
+        accent = Color(0xFF00C853),
+    ),
+    sheetTypography = PassportScannerDefaults.sheetTypography(
+        fontFamily = myFont, // applied to every sheet text style
+        title = MaterialTheme.typography.headlineSmall,
+    ),
+)
+```
+
+| `sheetColors` | Used for |
+|---|---|
+| `container`, `scrim`, `dragHandle` | Sheet background, dimmed backdrop, top handle |
+| `title`, `body` | Sheet titles; descriptions and tips |
+| `label`, `value`, `divider` | Review sheet rows |
+| `primaryButtonContainer`, `primaryButtonContent` | "Confirm" / "Try again" |
+| `secondaryButtonContent` | "Re-scan", "Use this photo", "Got it" (text and outline) |
+| `accent` | MRZ highlight in the tips illustration |
+
+`sheetTypography` has `title`, `body`, `label`, `value` and `button` styles. `fontFamily` is applied on top of whichever styles you pass, so you can change the font alone or both font and sizes.
+
 ### Parser only
 
 If you already have OCR text, use the parser on its own:
@@ -153,25 +202,6 @@ val data: PassportMrzData? = MrzParser.parse(listOf(line1, line2))
 - Android: `./gradlew :androidApp:installDebug`
 - iOS: open `iosApp/iosApp.xcodeproj` in Xcode and run it on a device. The simulator has no camera, but gallery import works there.
 
-## Development
-
-```bash
-./gradlew :passportscanner:testAndroidHostTest :passportscanner:iosSimulatorArm64Test   # tests
-./gradlew :passportscanner:publishToMavenLocal                                          # try it in another project via mavenLocal()
-```
-
-### Publishing to Maven Central
-
-1. Create an account at [central.sonatype.com](https://central.sonatype.com). The `io.github.dipeshlama` namespace is verified automatically through your GitHub login.
-2. Generate a user token and a GPG key, then put them in `~/.gradle/gradle.properties`, not in this repo:
-   ```properties
-   mavenCentralUsername=<token username>
-   mavenCentralPassword=<token password>
-   signingInMemoryKey=<ascii-armored private key, newlines removed>
-   signingInMemoryKeyPassword=<key password>
-   ```
-3. Bump `version` in `passportscanner/build.gradle.kts`, then run `./gradlew :passportscanner:publishAndReleaseToMavenCentral`.
-
 ## Limitations
 
 - TD3 (passport booklet) MRZs only; ID cards (TD1/TD2) and visas aren't parsed yet.
@@ -180,4 +210,4 @@ val data: PassportMrzData? = MrzParser.parse(listOf(line1, line2))
 
 ## License
 
-Apache License 2.0. See [LICENSE](LICENSE).
+MIT License. See [LICENSE](LICENSE).

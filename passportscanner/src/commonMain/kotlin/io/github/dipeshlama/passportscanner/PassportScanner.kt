@@ -73,6 +73,7 @@ import io.github.dipeshlama.passportscanner.internal.PreviewCrop
 import io.github.dipeshlama.passportscanner.internal.ReviewSheet
 import io.github.dipeshlama.passportscanner.internal.ScannerIcons
 import io.github.dipeshlama.passportscanner.internal.ScannerState
+import io.github.dipeshlama.passportscanner.internal.SheetStyle
 import io.github.dipeshlama.passportscanner.internal.TipsSheet
 import io.github.dipeshlama.passportscanner.internal.UnreadableSheet
 import io.github.dipeshlama.passportscanner.internal.rememberCameraPermission
@@ -96,6 +97,8 @@ private val ScanLineBandHeight = 47.dp
  * @param config behaviour options.
  * @param strings text shown by the scanner.
  * @param colors colours of the camera overlay, including the scan line.
+ * @param sheetColors colours of the review, unreadable and tips sheets.
+ * @param sheetTypography text styles (and fonts) of the review, unreadable and tips sheets.
  * @param title replaces the top bar title. Null uses [PassportScannerStrings.title].
  * @param instruction replaces the message above the frame. Null uses [PassportScannerStrings.instruction].
  * @param galleryButton replaces the gallery button. Null uses [PassportScannerDefaults.GalleryButton].
@@ -110,6 +113,8 @@ fun PassportScanner(
     config: PassportScannerConfig = PassportScannerConfig(),
     strings: PassportScannerStrings = PassportScannerStrings(),
     colors: PassportScannerColors = PassportScannerDefaults.colors(),
+    sheetColors: PassportScannerSheetColors = PassportScannerDefaults.sheetColors(),
+    sheetTypography: PassportScannerSheetTypography = PassportScannerDefaults.sheetTypography(),
     title: (@Composable () -> Unit)? = null,
     instruction: (@Composable () -> Unit)? = null,
     galleryButton: (@Composable (onClick: () -> Unit, enabled: Boolean) -> Unit)? = null,
@@ -269,9 +274,12 @@ fun PassportScanner(
         }
     }
 
+    val sheetStyle = remember(sheetColors, sheetTypography) { SheetStyle(sheetColors, sheetTypography) }
+
     UnreadableSheet(
         scan = state.unreadableScan,
         strings = strings,
+        style = sheetStyle,
         allowImageOnly = config.allowImageOnlyResult,
         onRetry = state::retry,
         onUsePhoto = { deliver(state.useUnreadablePhoto()) }
@@ -280,6 +288,7 @@ fun PassportScanner(
     ReviewSheet(
         data = state.reviewScan?.data,
         strings = strings,
+        style = sheetStyle,
         onRescan = state::rescan,
         onConfirm = { deliver(state.confirmReview()) }
     )
@@ -288,6 +297,7 @@ fun PassportScanner(
         TipsSheet(
             isVisible = state.isTipsVisible,
             strings = strings,
+            style = sheetStyle,
             onDismiss = { state.showTips(false) }
         )
     }
