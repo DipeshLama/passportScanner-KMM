@@ -31,6 +31,29 @@ kotlin {
 }
 ```
 
+The library is published to [Maven Central](https://central.sonatype.com/artifact/io.github.dipeshlama/passport-scanner), so `mavenCentral()` is all you need in your repositories. Gradle picks the right artifact for each target on its own. All modules are published, and you only declare the one dependency above:
+
+| Artifact | Used for |
+|---|---|
+| `io.github.dipeshlama:passport-scanner` | The common module you depend on from `commonMain` |
+| `io.github.dipeshlama:passport-scanner-android` | The Android build |
+| `io.github.dipeshlama:passport-scanner-iosarm64` | iOS devices |
+| `io.github.dipeshlama:passport-scanner-iossimulatorarm64` | The iOS simulator on Apple Silicon |
+
+The sample app in `sample/` is not published.
+
+### Versions
+
+Version 1.0.0 is built with these versions. Use the same or newer in your app to avoid dependency conflicts.
+
+| Library | Version |
+|---|---|
+| Compose Multiplatform | 1.12.2 |
+| Kotlin | 2.4.21 |
+| Material 3 (Compose Multiplatform) | 1.12.0-alpha03 |
+| CameraX | 1.4.2 |
+| ML Kit text recognition | 19.0.1 |
+
 ### Platform setup
 
 **Android:** nothing to do. The library's manifest declares the `CAMERA` permission. It also tells Play services to download the ML Kit text model when the app is installed. If your app already sets `com.google.mlkit.vision.DEPENDENCIES` (for example `ocr,face`), add `tools:replace="android:value"` to your entry and keep `ocr` in its value.
