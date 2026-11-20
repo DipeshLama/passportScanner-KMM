@@ -31,16 +31,7 @@ kotlin {
 }
 ```
 
-The library is published to [Maven Central](https://central.sonatype.com/artifact/io.github.dipeshlama/passport-scanner), so `mavenCentral()` is all you need in your repositories. Gradle picks the right artifact for each target on its own. All modules are published, and you only declare the one dependency above:
-
-| Artifact | Used for |
-|---|---|
-| `io.github.dipeshlama:passport-scanner` | The common module you depend on from `commonMain` |
-| `io.github.dipeshlama:passport-scanner-android` | The Android build |
-| `io.github.dipeshlama:passport-scanner-iosarm64` | iOS devices |
-| `io.github.dipeshlama:passport-scanner-iossimulatorarm64` | The iOS simulator on Apple Silicon |
-
-The sample app in `sample/` is not published.
+The library is published to [Maven Central](https://central.sonatype.com/artifact/io.github.dipeshlama/passport-scanner), so `mavenCentral()` is all you need in your repositories.
 
 ### Versions
 
