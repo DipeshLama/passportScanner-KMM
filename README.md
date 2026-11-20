@@ -8,7 +8,6 @@ A Kotlin Multiplatform / Compose Multiplatform library that scans passports on *
 - ICAO 9303 TD3 MRZ parser that only accepts a result when every check digit validates, so a misread frame is rejected instead of returning wrong details
 - Camera permission handling, an optional review sheet and a tips sheet, with all text replaceable for localisation
 - OCR runs on the device: ML Kit on Android, Apple Vision on iOS. Nothing is sent over the network.
-- `toString()` of scan results hides personal details, so logging a result doesn't leak them
 
 ## Supported platforms
 
@@ -213,10 +212,11 @@ val data: PassportMrzData? = MrzParser.parse(listOf(line1, line2))
 
 ## Sample app
 
-`androidApp` and `iosApp` (through the `shared` module) are a small sample that opens the scanner and shows the result.
+The `sample/` folder holds a small app that opens the scanner and shows the result. It is separate from the library in `passportscanner/` and uses it the way your own app would.
 
-- Android: `./gradlew :androidApp:installDebug`
-- iOS: open `iosApp/iosApp.xcodeproj` in Xcode and run it on a device. The simulator has no camera, but gallery import works there.
+- `sample/androidApp`: the Android app. `sample/iosApp`: the iOS app. `sample/shared`: the Compose screen both of them show.
+- Android: `./gradlew :sample:androidApp:installDebug`
+- iOS: open `sample/iosApp/iosApp.xcodeproj` in Xcode and run it on a device. The simulator has no camera, but gallery import works there.
 
 ## Limitations
 

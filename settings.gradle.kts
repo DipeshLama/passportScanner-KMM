@@ -29,6 +29,6 @@ dependencyResolutionManagement {
 
 include(":passportscanner")
 
-// Sample app
-include(":androidApp")
-include(":shared")
+// Sample app, in sample/. It depends on :passportscanner like a consumer would.
+include(":sample:androidApp")
+include(":sample:shared")
