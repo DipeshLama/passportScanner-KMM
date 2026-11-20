@@ -27,5 +27,8 @@ dependencyResolutionManagement {
     }
 }
 
+include(":passportscanner")
+
+// Sample app
 include(":androidApp")
 include(":shared")

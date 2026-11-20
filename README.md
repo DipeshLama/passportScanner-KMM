@@ -1,31 +1,183 @@
-This is a Kotlin Multiplatform project targeting Android, iOS.
+# Passport Scanner for Compose Multiplatform
 
-* [/iosApp](./iosApp/iosApp) contains an iOS application. Even if you’re sharing your UI with Compose Multiplatform,
-  you need this entry point for your iOS app. This is also where you should add SwiftUI code for your project.
+A Kotlin Multiplatform / Compose Multiplatform library that scans passports on **Android and iOS** from `commonMain`.
 
-* [/shared](./shared/src) is for code that will be shared across your Compose Multiplatform applications.
-  It contains several subfolders:
-  - [commonMain](./shared/src/commonMain/kotlin) is for code that’s common for all targets.
-  - Other folders are for Kotlin code that will be compiled for only the platform indicated in the folder name.
-    For example, if you want to use Apple’s CoreCrypto for the iOS part of your Kotlin app,
-    the [iosMain](./shared/src/iosMain/kotlin) folder would be the right place for such calls.
-    Similarly, if you want to edit the Desktop (JVM) specific part, the [jvmMain](./shared/src/jvmMain/kotlin)
-    folder is the appropriate location.
+- Live camera scanning that finishes on its own once the passport is held steady inside the frame
+- Manual capture and gallery import for when auto-scan can't read the passport
+- ICAO 9303 TD3 MRZ parser that only accepts a result when every check digit validates, so a misread frame is rejected instead of returning wrong details
+- Camera permission handling, an optional review sheet and a tips sheet, with all text replaceable for localisation
+- OCR runs on the device: ML Kit on Android, Apple Vision on iOS. Nothing is sent over the network.
 
-### Running the apps
+## Installation
 
-Use the run configurations provided by the run widget in your IDE's toolbar. You can also use these commands and options:
+```kotlin
+// build.gradle.kts of your shared module
+kotlin {
+    sourceSets {
+        commonMain.dependencies {
+            implementation("io.github.dipeshlama:passport-scanner:0.1.0")
+        }
+    }
+}
+```
 
-- Android app: `./gradlew :androidApp:assembleDebug`
-- iOS app: open the [/iosApp](./iosApp) directory in Xcode and run it from there.
+Supported targets: `android` (minSdk 24), `iosArm64`, `iosSimulatorArm64`.
 
-### Running tests
+### Platform setup
 
-Use the run button in your IDE's editor gutter, or run tests using Gradle tasks:
+**Android:** nothing to do. The library's manifest declares the `CAMERA` permission. It also tells Play services to download the ML Kit text model when the app is installed. If your app already sets `com.google.mlkit.vision.DEPENDENCIES` (for example `ocr,face`), add `tools:replace="android:value"` to your entry and keep `ocr` in its value.
 
-- Android tests: `./gradlew :shared:testAndroidHostTest`
-- iOS tests: `./gradlew :shared:iosSimulatorArm64Test`
+**iOS:** add a camera usage description to your `Info.plist`:
 
----
+```xml
+<key>NSCameraUsageDescription</key>
+<string>The camera is used to scan your passport.</string>
+```
 
-Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html)…
+The gallery uses `PHPickerViewController`, which needs no photo library permission.
+
+## Usage
+
+```kotlin
+@Composable
+fun PassengerScreen() {
+    var scanning by remember { mutableStateOf(false) }
+
+    if (scanning) {
+        PassportScanner(
+            onResult = { result ->
+                scanning = false
+                when (result) {
+                    is PassportScanResult.Success -> {
+                        val mrz = result.data
+                        // mrz.givenNames, mrz.surname, mrz.documentNumber, mrz.nationality,
+                        // mrz.dateOfBirth, mrz.expiryDate, mrz.gender, mrz.issuingCountry
+                        // result.image: JPEG of the passport page (ByteArray), if you need to upload it
+                    }
+                    is PassportScanResult.ImageOnly -> {
+                        // MRZ unreadable; the user chose to keep the photo and fill in details manually
+                    }
+                }
+            },
+            onCancel = { scanning = false },
+        )
+    } else {
+        Button(onClick = { scanning = true }) { Text("Scan passport") }
+    }
+}
+```
+
+`PassportScanner` is a full-screen composable, so it works as a destination in any navigation library (Voyager, Navigation Compose, Decompose and others) or as plain state in a screen, as above. It calls `onResult` once and then stops scanning, so navigate away when it does.
+
+`onCancel` is called for the top bar's back button **and** for system back / the back gesture. The scanner consumes system back while it's shown, so back never falls through and closes your app. Open sheets (review, tips) take system back first and just close.
+
+### Configuration
+
+```kotlin
+PassportScanner(
+    onResult = { /* ... */ },
+    onCancel = { /* ... */ },
+    config = PassportScannerConfig(
+        reviewBeforeReturning = true, // show a confirm/re-scan sheet first
+        allowGallery = true,          // "Upload from gallery" button
+        allowImageOnlyResult = true,  // offer "Use this photo" when the MRZ can't be read
+        showTips = true,              // tips button and sheet
+    ),
+    strings = PassportScannerStrings(
+        title = stringResource(Res.string.scan_passport), // localise any text
+    ),
+)
+```
+
+Typography and button colours come from your `MaterialTheme`.
+
+### Customising the UI
+
+There are three levels; use whichever is enough.
+
+**1. Text:** pass `strings = PassportScannerStrings(...)` and override any field.
+
+**2. Colours:** the scan line that sweeps up and down, the frame corners, the scrim, and the text/icon colour over the camera:
+
+```kotlin
+colors = PassportScannerDefaults.colors(
+    scanLine = Color(0xFF00C853),
+    frameCorners = Color.White,
+    scrim = Color.Black.copy(alpha = 0.5f),
+    content = Color.White,
+)
+```
+
+**3. Slots:** replace a piece of the UI with your own composable. Leave a slot `null` (the default) to keep the built-in one:
+
+```kotlin
+PassportScanner(
+    onResult = { /* ... */ },
+    onCancel = { /* ... */ },
+    title = { Text("Verify identity", style = MaterialTheme.typography.titleLarge) },
+    instruction = { PassportScannerDefaults.Instruction("Hold the photo page inside the frame") },
+    galleryButton = { onClick, enabled ->
+        TextButton(onClick = onClick, enabled = enabled) { Text("Choose photo") }
+    },
+    captureButton = { onClick, enabled ->
+        FilledIconButton(onClick = onClick, enabled = enabled) { Icon(MyIcons.Camera, "Capture") }
+    },
+    captureHint = { Text("Tap if auto-scan doesn't pick it up") },
+)
+```
+
+| Slot | Replaces | Default text from `strings` |
+|---|---|---|
+| `title` | Title in the top bar | `title` |
+| `instruction` | Message above the frame | `instruction` |
+| `galleryButton(onClick, enabled)` | "Upload from gallery" button | `gallery` |
+| `captureButton(onClick, enabled)` | Round shutter button | `capture` (accessibility label) |
+| `captureHint` | Message under the shutter button | `captureHint` |
+
+Slots are drawn over the camera with `LocalContentColor` set to `colors.content`, so plain `Text`/`Icon` are readable without extra styling. The built-in pieces are public in `PassportScannerDefaults` (`Title`, `Instruction`, `GalleryButton`, `CaptureButton`, `CaptureHint`), so you can reuse or wrap them instead of starting from scratch.
+
+### Parser only
+
+If you already have OCR text, use the parser on its own:
+
+```kotlin
+val data: PassportMrzData? = MrzParser.parse(listOf(line1, line2))
+```
+
+`MrzParser.find(List<OcrLine>)` does the same with line positions, which lets it rebuild MRZ lines that the OCR engine split into pieces.
+
+## Sample app
+
+`androidApp` and `iosApp` (through the `shared` module) are a small sample that opens the scanner and shows the result.
+
+- Android: `./gradlew :androidApp:installDebug`
+- iOS: open `iosApp/iosApp.xcodeproj` in Xcode and run it on a device. The simulator has no camera, but gallery import works there.
+
+## Development
+
+```bash
+./gradlew :passportscanner:testAndroidHostTest :passportscanner:iosSimulatorArm64Test   # tests
+./gradlew :passportscanner:publishToMavenLocal                                          # try it in another project via mavenLocal()
+```
+
+### Publishing to Maven Central
+
+1. Create an account at [central.sonatype.com](https://central.sonatype.com). The `io.github.dipeshlama` namespace is verified automatically through your GitHub login.
+2. Generate a user token and a GPG key, then put them in `~/.gradle/gradle.properties`, not in this repo:
+   ```properties
+   mavenCentralUsername=<token username>
+   mavenCentralPassword=<token password>
+   signingInMemoryKey=<ascii-armored private key, newlines removed>
+   signingInMemoryKeyPassword=<key password>
+   ```
+3. Bump `version` in `passportscanner/build.gradle.kts`, then run `./gradlew :passportscanner:publishAndReleaseToMavenCentral`.
+
+## Limitations
+
+- TD3 (passport booklet) MRZs only; ID cards (TD1/TD2) and visas aren't parsed yet.
+- The live scanner assumes the phone is held in portrait.
+- The review sheet shows dates in ISO format (`yyyy-MM-dd`).
+
+## License
+
+Apache License 2.0. See [LICENSE](LICENSE).
