@@ -25,7 +25,7 @@ Desktop (JVM), web (JS/Wasm) and `iosX64` (Intel simulators) are not supported.
 kotlin {
     sourceSets {
         commonMain.dependencies {
-            implementation("io.github.dipeshlama:passport-scanner:0.1.0")
+            implementation("io.github.dipeshlama:passport-scanner:1.0.0")
         }
     }
 }
