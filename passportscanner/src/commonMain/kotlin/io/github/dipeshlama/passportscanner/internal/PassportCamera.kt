@@ -1,6 +1,9 @@
 package io.github.dipeshlama.passportscanner.internal
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.unit.IntRect
@@ -51,9 +54,22 @@ private fun PreviewCrop.mapToImage(imageWidth: Int, imageHeight: Int, marginRati
 
 internal class PassportCameraController {
     internal var captureHandler: (() -> Unit)? = null
+    internal var torchHandler: ((Boolean) -> Unit)? = null
+
+    /** Set by the platform camera once it knows whether the active camera has a flashlight. */
+    var hasTorch by mutableStateOf(false)
+        internal set
+
+    /** Set by the platform camera whenever the flashlight turns on or off. */
+    var isTorchOn by mutableStateOf(false)
+        internal set
 
     fun capture() {
         captureHandler?.invoke()
+    }
+
+    fun setTorch(on: Boolean) {
+        torchHandler?.invoke(on)
     }
 }
 

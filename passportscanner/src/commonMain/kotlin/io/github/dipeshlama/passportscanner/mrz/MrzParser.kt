@@ -12,21 +12,21 @@ import kotlinx.datetime.toLocalDateTime
  * Works on raw OCR output: common OCR mistakes are corrected, and a result is returned only when
  * the document number, date of birth and expiry date check digits are valid.
  */
-object MrzParser {
+public object MrzParser {
     private const val LINE_LENGTH = 44
     private const val LINE2_MIN_LENGTH = 28
     private const val LINE1_MIN_LENGTH = 7
     private const val FRAGMENT_MAX_GAP_IN_LINE_HEIGHTS = 2f
 
     /** Parses the MRZ from lines of OCR text, or returns null if no valid MRZ is found. */
-    fun parse(ocrLines: List<String>): PassportMrzData? =
+    public fun parse(ocrLines: List<String>): PassportMrzData? =
         find(ocrLines.map { OcrLine(it, Rect.Zero) })?.data
 
     /**
      * Like [parse], but uses line positions to join lines that OCR split into fragments, and
      * returns where the MRZ is in the image.
      */
-    fun find(ocrLines: List<OcrLine>): MrzMatch? {
+    public fun find(ocrLines: List<OcrLine>): MrzMatch? {
         val rows = mergeRows(ocrLines).map { it to normalise(it.text) }
         for (index in rows.indices) {
             val (line2, text2) = rows[index]

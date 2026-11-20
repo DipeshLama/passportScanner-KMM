@@ -4,9 +4,11 @@ A Kotlin Multiplatform / Compose Multiplatform library that scans passports on *
 
 - Live camera scanning that finishes on its own once the passport is held steady inside the frame
 - Manual capture and gallery import for when auto-scan can't read the passport
+- Flashlight button for dim rooms, and an optional check that rejects expired passports
 - ICAO 9303 TD3 MRZ parser that only accepts a result when every check digit validates, so a misread frame is rejected instead of returning wrong details
 - Camera permission handling, an optional review sheet and a tips sheet, with all text replaceable for localisation
 - OCR runs on the device: ML Kit on Android, Apple Vision on iOS. Nothing is sent over the network.
+- `toString()` of scan results hides personal details, so logging a result doesn't leak them
 
 ## Supported platforms
 
@@ -89,12 +91,16 @@ PassportScanner(
         allowGallery = true,          // "Upload from gallery" button
         allowImageOnlyResult = true,  // offer "Use this photo" when the MRZ can't be read
         showTips = true,              // tips button and sheet
+        showTorch = true,             // flashlight button (hidden if the device has none)
+        rejectExpired = false,        // true: ask for another passport if this one has expired
     ),
     strings = PassportScannerStrings(
         title = stringResource(Res.string.scan_passport), // localise any text
     ),
 )
 ```
+
+With `rejectExpired = true`, an expired passport is never returned: the scanner shows `strings.expiredTitle` with a "Scan another passport" button. A passport is still valid on its expiry date. To check it yourself instead, use `result.data.isExpired()`.
 
 By default, sheet colours and fonts come from your `MaterialTheme`; see [Sheet colours and fonts](#sheet-colours-and-fonts) to change them.
 
@@ -104,7 +110,7 @@ There are four levels; use whichever is enough.
 
 **1. Text:** pass `strings = PassportScannerStrings(...)` and override any field.
 
-**2. Colours:** the scan line that sweeps up and down, the frame corners, the scrim, and the text/icon colour over the camera:
+**2. Colours:** the scan line that sweeps up and down, the frame corners, the scrim, the text/icon colour over the camera, the "Reading passport…" spinner and the camera permission prompt:
 
 ```kotlin
 colors = PassportScannerDefaults.colors(
@@ -112,6 +118,12 @@ colors = PassportScannerDefaults.colors(
     frameCorners = Color.White,
     scrim = Color.Black.copy(alpha = 0.5f),
     content = Color.White,
+    processingIndicator = Color(0xFF00C853),     // spinner while a photo is read
+    processingScrim = Color.Black.copy(alpha = 0.7f),
+    processingText = Color.White,
+    permissionText = Color.White,                // "Allow camera access…" message
+    permissionButtonContainer = Color(0xFF00C853),
+    permissionButtonContent = Color.Black,
 )
 ```
 
@@ -184,6 +196,10 @@ PassportScanner(
 | `accent` | MRZ highlight in the tips illustration |
 
 `sheetTypography` has `title`, `body`, `label`, `value` and `button` styles. `fontFamily` is applied on top of whichever styles you pass, so you can change the font alone or both font and sizes.
+
+### Logging and personal data
+
+`PassportMrzData.toString()` (and so `PassportScanResult.Success.toString()`) prints `***` for every field. Read the properties (`data.documentNumber`, `data.surname`, …) when you need the values. Equality and `copy()` work as usual.
 
 ### Parser only
 

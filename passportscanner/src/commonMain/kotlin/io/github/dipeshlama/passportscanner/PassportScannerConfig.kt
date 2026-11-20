@@ -10,18 +10,23 @@ import androidx.compose.runtime.Immutable
  * @property allowImageOnlyResult when the MRZ can't be read, let the user keep the photo
  *   ([PassportScanResult.ImageOnly]).
  * @property showTips show the scanning tips button.
+ * @property showTorch show the flashlight button when the device has one.
+ * @property rejectExpired when the scanned passport has expired, show
+ *   [PassportScannerStrings.expiredTitle] and ask for another passport instead of returning it.
  */
 @Immutable
-data class PassportScannerConfig(
+public data class PassportScannerConfig(
     val reviewBeforeReturning: Boolean = true,
     val allowGallery: Boolean = true,
     val allowImageOnlyResult: Boolean = true,
     val showTips: Boolean = true,
+    val showTorch: Boolean = true,
+    val rejectExpired: Boolean = false,
 )
 
 /** Text shown by [PassportScanner]. Override any value to change or translate it. */
 @Immutable
-data class PassportScannerStrings(
+public data class PassportScannerStrings(
     val title: String = "Scan passport",
     val instruction: String = "Fit the passport photo page inside the frame",
     val back: String = "Back",
@@ -33,12 +38,18 @@ data class PassportScannerStrings(
     val permissionDescription: String =
         "Allow camera access to scan your passport, or upload a photo from your gallery.",
     val allowCamera: String = "Allow camera",
+    val torchOn: String = "Turn on flashlight",
+    val torchOff: String = "Turn off flashlight",
 
     val failedTitle: String = "Couldn't read your passport",
     val failedDescription: String =
         "Make sure the two lines of characters at the bottom of the photo page are flat, in focus and free of glare.",
     val tryAgain: String = "Try again",
     val useThisPhoto: String = "Use this photo",
+
+    val expiredTitle: String = "This passport has expired",
+    val expiredDescription: String = "Scan a passport that is still valid.",
+    val scanAnother: String = "Scan another passport",
 
     val reviewTitle: String = "Check your details",
     val reviewDescription: String = "Make sure these match your passport.",

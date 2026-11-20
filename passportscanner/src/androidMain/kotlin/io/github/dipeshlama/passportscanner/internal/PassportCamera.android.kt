@@ -1,6 +1,7 @@
 package io.github.dipeshlama.passportscanner.internal
 
 import android.content.Context
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
@@ -12,6 +13,7 @@ import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.ImageProxy
+import androidx.camera.core.TorchState
 import androidx.camera.core.resolutionselector.AspectRatioStrategy
 import androidx.camera.core.resolutionselector.ResolutionSelector
 import androidx.camera.core.resolutionselector.ResolutionStrategy
@@ -32,6 +34,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.exifinterface.media.ExifInterface
+import androidx.lifecycle.Observer
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import io.github.dipeshlama.passportscanner.mrz.MrzParser
 import com.google.android.gms.tasks.Tasks
@@ -129,6 +132,19 @@ internal actual fun PassportCameraView(
             )
         }
         onDispose { controller.captureHandler = null }
+    }
+
+    DisposableEffect(controller, cameraController, lifecycleOwner) {
+        controller.hasTorch = context.packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA_FLASH)
+        controller.torchHandler = { on -> cameraController.enableTorch(on) }
+        // The torch also turns off on its own, e.g. when the app goes to the background.
+        val torchObserver = Observer<Int> { controller.isTorchOn = it == TorchState.ON }
+        cameraController.torchState.observe(lifecycleOwner, torchObserver)
+        onDispose {
+            cameraController.torchState.removeObserver(torchObserver)
+            controller.torchHandler = null
+            controller.isTorchOn = false
+        }
     }
 
     DisposableEffect(Unit) {

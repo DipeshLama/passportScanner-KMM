@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -67,6 +68,7 @@ import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
 import io.github.dipeshlama.passportscanner.internal.CameraScan
+import io.github.dipeshlama.passportscanner.internal.ExpiredSheet
 import io.github.dipeshlama.passportscanner.internal.PassportCameraController
 import io.github.dipeshlama.passportscanner.internal.PassportCameraView
 import io.github.dipeshlama.passportscanner.internal.PreviewCrop
@@ -106,7 +108,7 @@ private val ScanLineBandHeight = 47.dp
  * @param captureHint replaces the message under the capture button. Null uses [PassportScannerStrings.captureHint].
  */
 @Composable
-fun PassportScanner(
+public fun PassportScanner(
     onResult: (PassportScanResult) -> Unit,
     onCancel: () -> Unit,
     modifier: Modifier = Modifier,
@@ -123,7 +125,7 @@ fun PassportScanner(
 ) {
     val currentConfig by rememberUpdatedState(config)
     val currentOnResult by rememberUpdatedState(onResult)
-    val state = remember { ScannerState { currentConfig } }
+    val state = remember { ScannerState(config = { currentConfig }) }
     val deliver: (PassportScanResult?) -> Unit = { result -> result?.let(currentOnResult) }
 
     val currentOnCancel by rememberUpdatedState(onCancel)
@@ -183,7 +185,21 @@ fun PassportScanner(
                     .statusBarsPadding()
                     .navigationBarsPadding()
             ) {
-                ScannerTopBar(backDescription = strings.back, onBack = onCancel) {
+                ScannerTopBar(
+                    backDescription = strings.back,
+                    onBack = onCancel,
+                    action = {
+                        if (config.showTorch && isCameraGranted && cameraController.hasTorch) {
+                            val isOn = cameraController.isTorchOn
+                            IconButton(onClick = { cameraController.setTorch(!isOn) }) {
+                                Icon(
+                                    if (isOn) ScannerIcons.FlashOff else ScannerIcons.FlashOn,
+                                    contentDescription = if (isOn) strings.torchOff else strings.torchOn
+                                )
+                            }
+                        }
+                    }
+                ) {
                     if (title != null) title() else PassportScannerDefaults.Title(strings.title)
                 }
 
@@ -214,7 +230,8 @@ fun PassportScanner(
                             CameraPermissionPrompt(
                                 description = strings.permissionDescription,
                                 buttonText = strings.allowCamera,
-                                onAllowClick = cameraPermission::request
+                                onAllowClick = cameraPermission::request,
+                                colors = colors
                             )
                         }
                     }
@@ -270,7 +287,7 @@ fun PassportScanner(
         }
 
         if (state.isProcessing) {
-            ProcessingOverlay(text = strings.processing)
+            ProcessingOverlay(text = strings.processing, colors = colors)
         }
     }
 
@@ -283,6 +300,13 @@ fun PassportScanner(
         allowImageOnly = config.allowImageOnlyResult,
         onRetry = state::retry,
         onUsePhoto = { deliver(state.useUnreadablePhoto()) }
+    )
+
+    ExpiredSheet(
+        scan = state.expiredScan,
+        strings = strings,
+        style = sheetStyle,
+        onScanAnother = state::dismissExpired
     )
 
     ReviewSheet(
@@ -304,7 +328,12 @@ fun PassportScanner(
 }
 
 @Composable
-private fun ScannerTopBar(backDescription: String, onBack: () -> Unit, title: @Composable () -> Unit) {
+private fun ScannerTopBar(
+    backDescription: String,
+    onBack: () -> Unit,
+    action: @Composable () -> Unit,
+    title: @Composable () -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -315,7 +344,7 @@ private fun ScannerTopBar(backDescription: String, onBack: () -> Unit, title: @C
             Icon(ScannerIcons.ArrowBack, contentDescription = backDescription)
         }
         Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) { title() }
-        Spacer(Modifier.size(48.dp))
+        Box(modifier = Modifier.size(48.dp), contentAlignment = Alignment.Center) { action() }
     }
 }
 
@@ -410,7 +439,12 @@ private fun DrawScope.drawCornerBrackets(color: Color) {
 }
 
 @Composable
-private fun CameraPermissionPrompt(description: String, buttonText: String, onAllowClick: () -> Unit) {
+private fun CameraPermissionPrompt(
+    description: String,
+    buttonText: String,
+    onAllowClick: () -> Unit,
+    colors: PassportScannerColors
+) {
     Column(
         modifier = Modifier.padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -419,18 +453,25 @@ private fun CameraPermissionPrompt(description: String, buttonText: String, onAl
         Text(
             text = description,
             style = MaterialTheme.typography.bodyMedium,
+            color = colors.permissionText,
             textAlign = TextAlign.Center
         )
-        Button(onClick = onAllowClick) { Text(buttonText) }
+        Button(
+            onClick = onAllowClick,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = colors.permissionButtonContainer,
+                contentColor = colors.permissionButtonContent
+            )
+        ) { Text(buttonText) }
     }
 }
 
 @Composable
-private fun ProcessingOverlay(text: String) {
+private fun ProcessingOverlay(text: String, colors: PassportScannerColors) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.6f))
+            .background(colors.processingScrim)
             .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {},
         contentAlignment = Alignment.Center
     ) {
@@ -438,8 +479,8 @@ private fun ProcessingOverlay(text: String) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-            Text(text = text, style = MaterialTheme.typography.bodyMedium, color = Color.White)
+            CircularProgressIndicator(color = colors.processingIndicator)
+            Text(text = text, style = MaterialTheme.typography.bodyMedium, color = colors.processingText)
         }
     }
 }

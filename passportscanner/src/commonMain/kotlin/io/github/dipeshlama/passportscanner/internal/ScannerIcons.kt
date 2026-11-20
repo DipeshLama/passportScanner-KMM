@@ -19,6 +19,12 @@ internal object ScannerIcons {
             "M8.5,13.5l2.5,3.01L14.5,12l4.5,6H5l3.5,-4.5z"
     )
 
+    val FlashOn = icon("FlashOn", "M7,2v11h3v9l7,-12h-4l4,-8z")
+    val FlashOff = icon(
+        "FlashOff",
+        "M3.27,3L2,4.27l5,5V13h3v9l3.58,-6.14L17.73,20 19,18.73 3.27,3zM17,10h-4l4,-8H7v2.18l8.46,8.46L17,10z"
+    )
+
     private fun icon(name: String, pathData: String) = ImageVector.Builder(
         name = name,
         defaultWidth = 24.dp,

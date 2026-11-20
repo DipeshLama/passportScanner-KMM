@@ -146,6 +146,25 @@ internal fun UnreadableSheet(
 }
 
 @Composable
+internal fun ExpiredSheet(
+    scan: CameraScan?,
+    strings: PassportScannerStrings,
+    style: SheetStyle,
+    onScanAnother: () -> Unit
+) {
+    ScannerSheet(isVisible = scan != null, style = style, onDismissRequest = onScanAnother) { hideThen ->
+        SheetTitle(strings.expiredTitle, style)
+        SheetBody(strings.expiredDescription, style)
+        PrimaryButton(
+            strings.scanAnother,
+            style,
+            onClick = { hideThen(onScanAnother) },
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
+}
+
+@Composable
 internal fun ReviewSheet(
     data: PassportMrzData?,
     strings: PassportScannerStrings,

@@ -41,14 +41,26 @@ import io.github.dipeshlama.passportscanner.internal.ScannerIcons
  * @property scrim the dimmed area outside the frame.
  * @property content text and icons shown over the camera.
  * @property chipBackground background of the instruction text and gallery button.
+ * @property processingIndicator the spinner shown while a photo is being read.
+ * @property processingScrim the dimmed overlay behind the spinner.
+ * @property processingText the "Reading passport…" text.
+ * @property permissionText the explanation shown in the frame when camera access is missing.
+ * @property permissionButtonContainer background of the "Allow camera" button.
+ * @property permissionButtonContent text of the "Allow camera" button.
  */
 @Immutable
-class PassportScannerColors(
-    val scanLine: Color,
-    val frameCorners: Color,
-    val scrim: Color,
-    val content: Color,
-    val chipBackground: Color,
+public class PassportScannerColors(
+    public val scanLine: Color,
+    public val frameCorners: Color,
+    public val scrim: Color,
+    public val content: Color,
+    public val chipBackground: Color,
+    public val processingIndicator: Color,
+    public val processingScrim: Color,
+    public val processingText: Color,
+    public val permissionText: Color,
+    public val permissionButtonContainer: Color,
+    public val permissionButtonContent: Color,
 )
 
 /**
@@ -69,19 +81,19 @@ class PassportScannerColors(
  * @property accent highlight around the MRZ in the tips illustration.
  */
 @Immutable
-class PassportScannerSheetColors(
-    val container: Color,
-    val scrim: Color,
-    val dragHandle: Color,
-    val title: Color,
-    val body: Color,
-    val label: Color,
-    val value: Color,
-    val divider: Color,
-    val primaryButtonContainer: Color,
-    val primaryButtonContent: Color,
-    val secondaryButtonContent: Color,
-    val accent: Color,
+public class PassportScannerSheetColors(
+    public val container: Color,
+    public val scrim: Color,
+    public val dragHandle: Color,
+    public val title: Color,
+    public val body: Color,
+    public val label: Color,
+    public val value: Color,
+    public val divider: Color,
+    public val primaryButtonContainer: Color,
+    public val primaryButtonContent: Color,
+    public val secondaryButtonContent: Color,
+    public val accent: Color,
 )
 
 /**
@@ -95,19 +107,19 @@ class PassportScannerSheetColors(
  * @property button button text.
  */
 @Immutable
-class PassportScannerSheetTypography(
-    val title: TextStyle,
-    val body: TextStyle,
-    val label: TextStyle,
-    val value: TextStyle,
-    val button: TextStyle,
+public class PassportScannerSheetTypography(
+    public val title: TextStyle,
+    public val body: TextStyle,
+    public val label: TextStyle,
+    public val value: TextStyle,
+    public val button: TextStyle,
 )
 
 /** Default colours and UI pieces of [PassportScanner], for use in custom slots. */
-object PassportScannerDefaults {
+public object PassportScannerDefaults {
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
-    fun sheetColors(
+    public fun sheetColors(
         container: Color = BottomSheetDefaults.ContainerColor,
         scrim: Color = BottomSheetDefaults.ScrimColor,
         dragHandle: Color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -139,7 +151,7 @@ object PassportScannerDefaults {
      * Pass [fontFamily] to change the font of every sheet text at once, or override single styles.
      */
     @Composable
-    fun sheetTypography(
+    public fun sheetTypography(
         fontFamily: FontFamily? = null,
         title: TextStyle = MaterialTheme.typography.titleLarge,
         body: TextStyle = MaterialTheme.typography.bodyMedium,
@@ -158,22 +170,34 @@ object PassportScannerDefaults {
     }
 
     @Composable
-    fun colors(
+    public fun colors(
         scanLine: Color = MaterialTheme.colorScheme.primary,
         frameCorners: Color = Color.White,
         scrim: Color = Color.Black.copy(alpha = 0.4f),
         content: Color = Color.White,
         chipBackground: Color = Color.Black.copy(alpha = 0.25f),
+        processingIndicator: Color = MaterialTheme.colorScheme.primary,
+        processingScrim: Color = Color.Black.copy(alpha = 0.6f),
+        processingText: Color = Color.White,
+        permissionText: Color = content,
+        permissionButtonContainer: Color = MaterialTheme.colorScheme.primary,
+        permissionButtonContent: Color = MaterialTheme.colorScheme.onPrimary,
     ): PassportScannerColors = PassportScannerColors(
         scanLine = scanLine,
         frameCorners = frameCorners,
         scrim = scrim,
         content = content,
         chipBackground = chipBackground,
+        processingIndicator = processingIndicator,
+        processingScrim = processingScrim,
+        processingText = processingText,
+        permissionText = permissionText,
+        permissionButtonContainer = permissionButtonContainer,
+        permissionButtonContent = permissionButtonContent,
     )
 
     @Composable
-    fun Title(text: String, modifier: Modifier = Modifier) {
+    public fun Title(text: String, modifier: Modifier = Modifier) {
         Text(
             text = text,
             style = MaterialTheme.typography.titleMedium,
@@ -184,7 +208,7 @@ object PassportScannerDefaults {
     }
 
     @Composable
-    fun Instruction(
+    public fun Instruction(
         text: String,
         modifier: Modifier = Modifier,
         backgroundColor: Color = Color.Black.copy(alpha = 0.25f),
@@ -201,7 +225,7 @@ object PassportScannerDefaults {
     }
 
     @Composable
-    fun GalleryButton(
+    public fun GalleryButton(
         text: String,
         onClick: () -> Unit,
         enabled: Boolean,
@@ -228,7 +252,7 @@ object PassportScannerDefaults {
     }
 
     @Composable
-    fun CaptureButton(
+    public fun CaptureButton(
         onClick: () -> Unit,
         enabled: Boolean,
         contentDescription: String,
@@ -249,7 +273,7 @@ object PassportScannerDefaults {
     }
 
     @Composable
-    fun CaptureHint(text: String, modifier: Modifier = Modifier) {
+    public fun CaptureHint(text: String, modifier: Modifier = Modifier) {
         Text(
             text = text,
             style = MaterialTheme.typography.bodySmall,

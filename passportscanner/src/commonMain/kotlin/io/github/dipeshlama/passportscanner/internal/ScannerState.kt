@@ -5,8 +5,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import io.github.dipeshlama.passportscanner.PassportScanResult
 import io.github.dipeshlama.passportscanner.PassportScannerConfig
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.todayIn
+import kotlin.time.Clock
 
-internal class ScannerState(private val config: () -> PassportScannerConfig) {
+internal class ScannerState(
+    private val config: () -> PassportScannerConfig,
+    private val today: () -> LocalDate = { Clock.System.todayIn(TimeZone.currentSystemDefault()) },
+) {
     var isProcessing by mutableStateOf(false)
         private set
 
@@ -16,6 +23,9 @@ internal class ScannerState(private val config: () -> PassportScannerConfig) {
     var reviewScan by mutableStateOf<CameraScan?>(null)
         private set
 
+    var expiredScan by mutableStateOf<CameraScan?>(null)
+        private set
+
     var isTipsVisible by mutableStateOf(false)
         private set
 
@@ -23,7 +33,8 @@ internal class ScannerState(private val config: () -> PassportScannerConfig) {
         private set
 
     val isAutoScanEnabled: Boolean
-        get() = !isProcessing && unreadableScan == null && reviewScan == null && !isTipsVisible && !isFinished
+        get() = !isProcessing && unreadableScan == null && reviewScan == null && expiredScan == null &&
+            !isTipsVisible && !isFinished
 
     fun onProcessingStarted() {
         if (!isFinished) isProcessing = true
@@ -34,12 +45,16 @@ internal class ScannerState(private val config: () -> PassportScannerConfig) {
     }
 
     fun onScan(scan: CameraScan): PassportScanResult? {
-        if (isFinished || reviewScan != null) return null
+        if (isFinished || reviewScan != null || expiredScan != null) return null
         isProcessing = false
         val data = scan.data
         return when {
             data == null -> {
                 unreadableScan = scan
+                null
+            }
+            config().rejectExpired && data.isExpired(today()) -> {
+                expiredScan = scan
                 null
             }
             config().reviewBeforeReturning -> {
@@ -56,6 +71,10 @@ internal class ScannerState(private val config: () -> PassportScannerConfig) {
 
     fun rescan() {
         reviewScan = null
+    }
+
+    fun dismissExpired() {
+        expiredScan = null
     }
 
     fun confirmReview(): PassportScanResult? {
@@ -80,6 +99,7 @@ internal class ScannerState(private val config: () -> PassportScannerConfig) {
         isProcessing = false
         unreadableScan = null
         reviewScan = null
+        expiredScan = null
         return result
     }
 }

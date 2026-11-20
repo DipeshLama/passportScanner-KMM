@@ -29,7 +29,12 @@ import platform.AVFoundation.AVCaptureVideoDataOutput
 import platform.AVFoundation.AVCaptureVideoDataOutputSampleBufferDelegateProtocol
 import platform.AVFoundation.AVCaptureVideoPreviewLayer
 import platform.AVFoundation.AVLayerVideoGravityResizeAspectFill
+import platform.AVFoundation.AVCaptureTorchModeOff
+import platform.AVFoundation.AVCaptureTorchModeOn
 import platform.AVFoundation.AVMediaTypeVideo
+import platform.AVFoundation.hasTorch
+import platform.AVFoundation.isTorchModeSupported
+import platform.AVFoundation.torchMode
 import platform.AVFoundation.focusMode
 import platform.AVFoundation.isFocusModeSupported
 import platform.AVFoundation.minimumFocusDistance
@@ -85,7 +90,15 @@ internal actual fun PassportCameraView(
 ) {
     val currentOnResult by rememberUpdatedState(onResult)
     val currentOnCaptureStarted by rememberUpdatedState(onCaptureStarted)
-    val scanner = remember { PassportCaptureSession { result -> currentOnResult(result) } }
+    val scanner = remember {
+        PassportCaptureSession(
+            onResult = { result -> currentOnResult(result) },
+            onTorchChanged = { hasTorch, isOn ->
+                controller.hasTorch = hasTorch
+                controller.isTorchOn = isOn
+            }
+        )
+    }
 
     LaunchedEffect(isAutoScanEnabled) {
         scanner.setAutoScanEnabled(isAutoScanEnabled)
@@ -100,7 +113,12 @@ internal actual fun PassportCameraView(
             currentOnCaptureStarted()
             scanner.requestCapture()
         }
-        onDispose { controller.captureHandler = null }
+        controller.torchHandler = scanner::setTorch
+        onDispose {
+            controller.captureHandler = null
+            controller.torchHandler = null
+            controller.isTorchOn = false
+        }
     }
 
     DisposableEffect(scanner) {
@@ -115,7 +133,8 @@ internal actual fun PassportCameraView(
 }
 
 private class PassportCaptureSession(
-    private val onResult: (CameraScan) -> Unit
+    private val onResult: (CameraScan) -> Unit,
+    private val onTorchChanged: (hasTorch: Boolean, isOn: Boolean) -> Unit
 ) : NSObject(), AVCaptureVideoDataOutputSampleBufferDelegateProtocol {
     private val session = AVCaptureSession()
     private val queue = dispatch_queue_create("io.github.dipeshlama.passportscanner", null)
@@ -126,6 +145,9 @@ private class PassportCaptureSession(
     private val autoScanGate = AutoScanGate()
     private val captureRequested = AtomicInt(0)
     private var isConfigured = false
+
+    // Only touched on [queue].
+    private var device: AVCaptureDevice? = null
 
     val crop = AtomicReference<PreviewCrop?>(null)
 
@@ -155,6 +177,24 @@ private class PassportCaptureSession(
         }
     }
 
+    fun setTorch(on: Boolean) {
+        dispatch_async(queue) {
+            val device = device ?: return@dispatch_async
+            val mode = if (on) AVCaptureTorchModeOn else AVCaptureTorchModeOff
+            if (device.hasTorch && device.isTorchModeSupported(mode) && device.lockForConfiguration(null)) {
+                device.torchMode = mode
+                device.unlockForConfiguration()
+            }
+            reportTorch(device)
+        }
+    }
+
+    private fun reportTorch(device: AVCaptureDevice) {
+        val hasTorch = device.hasTorch
+        val isOn = device.torchMode == AVCaptureTorchModeOn
+        dispatch_async(dispatch_get_main_queue()) { onTorchChanged(hasTorch, isOn) }
+    }
+
     private fun configure(): Boolean {
         val device = AVCaptureDevice.defaultDeviceWithMediaType(AVMediaTypeVideo) ?: return false
         val input = AVCaptureDeviceInput.deviceInputWithDevice(device, null) ?: return false
@@ -172,6 +212,8 @@ private class PassportCaptureSession(
         session.commitConfiguration()
 
         configureFocus(device)
+        this.device = device
+        reportTorch(device)
         return true
     }
 

@@ -12,6 +12,12 @@ group = "io.github.dipeshlama"
 version = "0.1.0"
 
 kotlin {
+    explicitApi()
+
+    // `./gradlew :passportscanner:updateKotlinAbi` after an intended public API change.
+    @OptIn(org.jetbrains.kotlin.gradle.dsl.abi.ExperimentalAbiValidation::class)
+    abiValidation()
+
     iosArm64()
     iosSimulatorArm64()
 
