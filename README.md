@@ -1,5 +1,12 @@
 # Passport Scanner for Compose Multiplatform
 
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.dipeshlama/passport-scanner?label=Maven%20Central&color=blue)](https://central.sonatype.com/artifact/io.github.dipeshlama/passport-scanner)
+[![GitHub tag](https://img.shields.io/github/v/tag/DipeshLama/passportScanner-KMM?label=release&color=brightgreen)](https://github.com/DipeshLama/passportScanner-KMM/tags)
+[![License: MIT](https://img.shields.io/github/license/DipeshLama/passportScanner-KMM?color=yellow)](LICENSE)
+![Platforms](https://img.shields.io/badge/platforms-Android%20%7C%20iOS-lightgrey)
+![Kotlin](https://img.shields.io/badge/Kotlin-2.4.21-7F52FF?logo=kotlin&logoColor=white)
+![Compose Multiplatform](https://img.shields.io/badge/Compose%20Multiplatform-1.12.2-4285F4?logo=jetpackcompose&logoColor=white)
+
 A Kotlin Multiplatform / Compose Multiplatform library that scans passports on **Android and iOS** from `commonMain`.
 
 - Live camera scanning that finishes on its own once the passport is held steady inside the frame
