@@ -4,6 +4,8 @@ import io.github.dipeshlama.passportscanner.PassportScanResult
 import io.github.dipeshlama.passportscanner.PassportScannerConfig
 import io.github.dipeshlama.passportscanner.mrz.MrzGender
 import io.github.dipeshlama.passportscanner.mrz.PassportMrzData
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.unit.IntRect
 import kotlinx.datetime.LocalDate
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -11,6 +13,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 class ScannerStateTest {
@@ -108,5 +111,55 @@ class ScannerStateTest {
         state.onScan(CameraScan(valid, image))
         assertNull(state.onScan(CameraScan(valid, image)))
         assertNull(state.confirmReview())
+    }
+
+    private class FakePickedImage : PickedImage {
+        override val width = 100
+        override val height = 100
+        override fun toImageBitmap(): ImageBitmap? = null
+        override suspend fun read(crop: IntRect?) = CameraScan(data = null, image = null)
+    }
+
+    @Test
+    fun galleryPhotoIsReadDirectlyWhenCroppingIsOff() {
+        val state = state(PassportScannerConfig(cropGalleryImage = false))
+        val picked = FakePickedImage()
+        state.onProcessingStarted()
+        assertSame(picked, state.onGalleryPicked(picked))
+        assertNull(state.cropImage)
+        assertTrue(state.isProcessing)
+    }
+
+    @Test
+    fun galleryPhotoWaitsForCropWhenCroppingIsOn() {
+        val state = state(PassportScannerConfig(cropGalleryImage = true))
+        val picked = FakePickedImage()
+        state.onProcessingStarted()
+        assertNull(state.onGalleryPicked(picked))
+        assertSame(picked, state.cropImage)
+        assertFalse(state.isProcessing)
+        assertFalse(state.isAutoScanEnabled)
+
+        assertSame(picked, state.confirmCrop())
+        assertNull(state.cropImage)
+        assertTrue(state.isProcessing)
+        assertNull(state.confirmCrop())
+    }
+
+    @Test
+    fun cancellingCropResumesAutoScan() {
+        val state = state(PassportScannerConfig(cropGalleryImage = true))
+        state.onGalleryPicked(FakePickedImage())
+        state.cancelCrop()
+        assertNull(state.cropImage)
+        assertTrue(state.isAutoScanEnabled)
+    }
+
+    @Test
+    fun galleryPhotoIgnoredAfterFinishing() {
+        val state = state(PassportScannerConfig(reviewBeforeReturning = false, cropGalleryImage = true))
+        state.onScan(CameraScan(valid, image))
+        assertNull(state.onGalleryPicked(FakePickedImage()))
+        assertNull(state.cropImage)
     }
 }

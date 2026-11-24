@@ -37,6 +37,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -62,15 +63,19 @@ import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
+import kotlinx.coroutines.launch
 import io.github.dipeshlama.passportscanner.internal.CameraScan
 import io.github.dipeshlama.passportscanner.internal.ExpiredSheet
+import io.github.dipeshlama.passportscanner.internal.ImageCropScreen
 import io.github.dipeshlama.passportscanner.internal.PassportCameraController
 import io.github.dipeshlama.passportscanner.internal.PassportCameraView
+import io.github.dipeshlama.passportscanner.internal.PickedImage
 import io.github.dipeshlama.passportscanner.internal.PreviewCrop
 import io.github.dipeshlama.passportscanner.internal.ReviewSheet
 import io.github.dipeshlama.passportscanner.internal.ScannerIcons
@@ -89,7 +94,8 @@ private val FrameBracketWidth = 3.dp
 private val ScanLineBandHeight = 47.dp
 
 /**
- * Full-screen passport scanner with live auto-scan, manual capture and gallery import.
+ * Full-screen passport scanner with live auto-scan, manual capture and gallery import, with optional
+ * cropping of gallery photos ([PassportScannerConfig.cropGalleryImage]).
  *
  * [onResult] is called once when a scan is complete; remove the scanner from composition after
  * that. [onCancel] is called when the user goes back, from the top bar or with system back.
@@ -131,7 +137,8 @@ public fun PassportScanner(
     val currentOnCancel by rememberUpdatedState(onCancel)
     NavigationBackHandler(
         state = rememberNavigationEventState(NavigationEventInfo.None),
-        isBackEnabled = !state.isFinished,
+        // The crop screen handles back itself, to return to the camera.
+        isBackEnabled = !state.isFinished && state.cropImage == null,
         onBackCompleted = { currentOnCancel() }
     )
 
@@ -143,9 +150,19 @@ public fun PassportScanner(
         if (!cameraPermission.isGranted) cameraPermission.request()
     }
 
+    val scope = rememberCoroutineScope()
+    val readPicked: (PickedImage, IntRect?) -> Unit = { image, crop ->
+        scope.launch { deliver(state.onScan(image.read(crop))) }
+    }
     val launchGallery = rememberPassportGalleryPicker(
-        onProcessing = state::onProcessingStarted,
-        onResult = { scan -> if (scan == null) state.onGalleryCancelled() else deliver(state.onScan(scan)) }
+        onLoading = state::onProcessingStarted,
+        onPicked = { image ->
+            if (image == null) {
+                state.onGalleryCancelled()
+            } else {
+                state.onGalleryPicked(image)?.let { readPicked(it, null) }
+            }
+        }
     )
 
     var rootOffset by remember { mutableStateOf(Offset.Zero) }
@@ -284,6 +301,16 @@ public fun PassportScanner(
                     if (captureHint != null) captureHint() else PassportScannerDefaults.CaptureHint(strings.captureHint)
                 }
             }
+        }
+
+        state.cropImage?.let { image ->
+            ImageCropScreen(
+                image = image,
+                strings = strings,
+                colors = colors,
+                onCancel = state::cancelCrop,
+                onConfirm = { crop -> state.confirmCrop()?.let { readPicked(it, crop) } }
+            )
         }
 
         if (state.isProcessing) {

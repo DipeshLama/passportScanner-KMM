@@ -10,6 +10,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.toComposeImageBitmap
+import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.viewinterop.UIKitView
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.CValue
@@ -47,7 +50,10 @@ import platform.CoreImage.CIImage
 import platform.CoreImage.createCGImage
 import platform.CoreMedia.CMSampleBufferGetImageBuffer
 import platform.CoreMedia.CMSampleBufferRef
+import platform.CoreGraphics.CGImageCreateWithImageInRect
 import platform.CoreGraphics.CGImageGetHeight
+import platform.CoreGraphics.CGImageRef
+import platform.CoreGraphics.CGImageRelease
 import platform.CoreGraphics.CGImageGetWidth
 import platform.CoreVideo.CVPixelBufferGetHeight
 import platform.CoreVideo.CVPixelBufferGetWidth
@@ -70,6 +76,7 @@ import platform.darwin.NSObject
 import platform.darwin.dispatch_async
 import platform.darwin.dispatch_get_main_queue
 import platform.darwin.dispatch_queue_create
+import org.jetbrains.skia.Image
 import kotlin.concurrent.AtomicInt
 import kotlin.concurrent.AtomicReference
 import kotlin.math.PI
@@ -330,22 +337,22 @@ private class CameraPreviewView(
 
 @Composable
 internal actual fun rememberPassportGalleryPicker(
-    onProcessing: () -> Unit,
-    onResult: (CameraScan?) -> Unit
+    onLoading: () -> Unit,
+    onPicked: (PickedImage?) -> Unit
 ): () -> Unit {
     val scope = rememberCoroutineScope()
-    val currentOnProcessing by rememberUpdatedState(onProcessing)
-    val currentOnResult by rememberUpdatedState(onResult)
+    val currentOnLoading by rememberUpdatedState(onLoading)
+    val currentOnPicked by rememberUpdatedState(onPicked)
 
     // PHPickerViewController holds its delegate weakly.
     val delegate = remember {
         PassportPickerDelegate(
-            onCancelled = { currentOnResult(null) },
+            onCancelled = { currentOnPicked(null) },
             onPicked = { data ->
-                currentOnProcessing()
+                currentOnLoading()
                 scope.launch {
-                    val result = withContext(Dispatchers.Default) { readPassportFromData(data) }
-                    currentOnResult(result)
+                    val image = withContext(Dispatchers.Default) { loadPickedImage(data) }
+                    currentOnPicked(image)
                 }
             }
         )
@@ -381,17 +388,44 @@ private class PassportPickerDelegate(
     }
 }
 
-private fun readPassportFromData(data: NSData?): CameraScan {
-    val image = data?.let { UIImage.imageWithData(it) }?.uprightAndScaled()
-        ?: return CameraScan(data = null, image = null)
-    val cgImage = image.CGImage ?: return CameraScan(data = null, image = image.toJpegBytes())
-    val handler = VNImageRequestHandler(cGImage = cgImage, options = emptyMap<Any?, Any?>())
-    val match = PassportTextReader.findMrz(
-        handler = handler,
-        imageWidth = CGImageGetWidth(cgImage).toInt(),
-        imageHeight = CGImageGetHeight(cgImage).toInt()
-    )
-    return CameraScan(data = match?.data, image = image.toJpegBytes())
+private fun loadPickedImage(data: NSData?): PickedImage? {
+    // Rendered at scale 1, so the CGImage's pixels match the UIImage's points.
+    val image = data?.let { UIImage.imageWithData(it) }?.uprightAndScaled() ?: return null
+    val cgImage = image.CGImage ?: return null
+    return IosPickedImage(image, cgImage)
+}
+
+private class IosPickedImage(
+    private val image: UIImage,
+    private val cgImage: CGImageRef
+) : PickedImage {
+    override val width: Int = CGImageGetWidth(cgImage).toInt()
+    override val height: Int = CGImageGetHeight(cgImage).toInt()
+
+    override fun toImageBitmap(): ImageBitmap? =
+        image.toJpegBytes()?.let { runCatching { Image.makeFromEncoded(it).toComposeImageBitmap() }.getOrNull() }
+
+    override suspend fun read(crop: IntRect?): CameraScan = withContext(Dispatchers.Default) {
+        val croppedCg = crop?.let {
+            CGImageCreateWithImageInRect(
+                cgImage,
+                CGRectMake(it.left.toDouble(), it.top.toDouble(), it.width.toDouble(), it.height.toDouble())
+            )
+        }
+        try {
+            val source = croppedCg ?: cgImage
+            val photo = if (croppedCg != null) UIImage.imageWithCGImage(croppedCg) else image
+            val handler = VNImageRequestHandler(cGImage = source, options = emptyMap<Any?, Any?>())
+            val match = PassportTextReader.findMrz(
+                handler = handler,
+                imageWidth = CGImageGetWidth(source).toInt(),
+                imageHeight = CGImageGetHeight(source).toInt()
+            )
+            CameraScan(data = match?.data, image = photo.toJpegBytes())
+        } finally {
+            croppedCg?.let { CGImageRelease(it) }
+        }
+    }
 }
 
 private fun topViewController(): UIViewController? {

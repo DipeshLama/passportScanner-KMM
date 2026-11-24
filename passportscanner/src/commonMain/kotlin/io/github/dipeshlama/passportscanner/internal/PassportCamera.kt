@@ -6,6 +6,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.unit.IntRect
 import io.github.dipeshlama.passportscanner.mrz.PassportMrzData
 import kotlin.math.max
@@ -83,8 +84,25 @@ internal expect fun PassportCameraView(
     modifier: Modifier = Modifier
 )
 
+/** A photo picked from the gallery, already upright and scaled down, not yet read. */
+internal interface PickedImage {
+    val width: Int
+    val height: Int
+
+    /** For showing the photo in the crop screen. */
+    fun toImageBitmap(): ImageBitmap?
+
+    /** Reads the MRZ from the photo, or from [crop] of it (in pixels) when given. */
+    suspend fun read(crop: IntRect? = null): CameraScan
+}
+
+/**
+ * Returns a function that opens the system photo picker. [onLoading] is called once a photo is
+ * chosen and is being loaded; [onPicked] is called with the photo, or with null when the user
+ * cancels or the photo can't be loaded.
+ */
 @Composable
 internal expect fun rememberPassportGalleryPicker(
-    onProcessing: () -> Unit,
-    onResult: (CameraScan?) -> Unit
+    onLoading: () -> Unit,
+    onPicked: (PickedImage?) -> Unit
 ): () -> Unit

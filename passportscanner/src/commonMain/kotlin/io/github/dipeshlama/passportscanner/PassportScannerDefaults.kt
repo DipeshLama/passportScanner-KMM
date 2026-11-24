@@ -37,16 +37,16 @@ import io.github.dipeshlama.passportscanner.internal.ScannerIcons
  * Colours of the scanner's camera overlay. Create with [PassportScannerDefaults.colors].
  *
  * @property scanLine the line moving up and down inside the frame.
- * @property frameCorners the corner brackets of the frame.
- * @property scrim the dimmed area outside the frame.
+ * @property frameCorners the corner brackets of the frame, and the frame of the crop screen.
+ * @property scrim the dimmed area outside the frame, and outside the crop on the crop screen.
  * @property content text and icons shown over the camera.
  * @property chipBackground background of the instruction text and gallery button.
  * @property processingIndicator the spinner shown while a photo is being read.
  * @property processingScrim the dimmed overlay behind the spinner.
  * @property processingText the "Reading passport…" text.
  * @property permissionText the explanation shown in the frame when camera access is missing.
- * @property permissionButtonContainer background of the "Allow camera" button.
- * @property permissionButtonContent text of the "Allow camera" button.
+ * @property permissionButtonContainer background of the "Allow camera" button and the crop screen's "Continue" button.
+ * @property permissionButtonContent text of the "Allow camera" button and the crop screen's "Continue" button.
  */
 @Immutable
 public class PassportScannerColors(

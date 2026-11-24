@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.background
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -17,6 +18,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -28,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.passportscannerkmm.features.Feature
@@ -38,6 +41,7 @@ import com.example.passportscannerkmm.ui.LabeledValue
 import com.example.passportscannerkmm.ui.StatusChip
 import io.github.dipeshlama.passportscanner.PassportScanResult
 import io.github.dipeshlama.passportscanner.PassportScanner
+import io.github.dipeshlama.passportscanner.PassportScannerConfig
 import io.github.dipeshlama.passportscanner.PassportScannerDefaults
 import org.jetbrains.compose.resources.decodeToImageBitmap
 
@@ -51,6 +55,7 @@ object PassportScannerFeature : Feature {
     override fun Content(onBack: () -> Unit) {
         var isScanning by remember { mutableStateOf(false) }
         var result by remember { mutableStateOf<PassportScanResult?>(null) }
+        var cropGalleryImage by remember { mutableStateOf(true) }
 
         if (isScanning) {
             PassportScanner(
@@ -59,6 +64,7 @@ object PassportScannerFeature : Feature {
                     isScanning = false
                 },
                 onCancel = { isScanning = false },
+                config = PassportScannerConfig(cropGalleryImage = cropGalleryImage),
                 colors = PassportScannerDefaults.colors(scanLine = Color(0xFF00C853)),
                 instruction = {
                     PassportScannerDefaults.Instruction("Hold your passport's photo page inside the frame")
@@ -78,6 +84,7 @@ object PassportScannerFeature : Feature {
             } else {
                 ResultCard(current)
             }
+            CropToggle(checked = cropGalleryImage, onCheckedChange = { cropGalleryImage = it })
             Button(
                 onClick = { isScanning = true },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
@@ -92,6 +99,34 @@ object PassportScannerFeature : Feature {
                     shape = MaterialTheme.shapes.medium,
                 ) { Text("Clear result") }
             }
+        }
+    }
+}
+
+@Composable
+private fun CropToggle(checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .toggleable(value = checked, role = Role.Switch, onValueChange = onCheckedChange)
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text("Crop gallery photos", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                Text(
+                    "Adjust a picked photo before it's read.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Switch(checked = checked, onCheckedChange = null)
         }
     }
 }

@@ -29,6 +29,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
@@ -230,23 +232,23 @@ private fun readCapturedStill(image: ImageProxy, crop: PreviewCrop?): CameraScan
 
 @Composable
 internal actual fun rememberPassportGalleryPicker(
-    onProcessing: () -> Unit,
-    onResult: (CameraScan?) -> Unit
+    onLoading: () -> Unit,
+    onPicked: (PickedImage?) -> Unit
 ): () -> Unit {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val currentOnProcessing by rememberUpdatedState(onProcessing)
-    val currentOnResult by rememberUpdatedState(onResult)
+    val currentOnLoading by rememberUpdatedState(onLoading)
+    val currentOnPicked by rememberUpdatedState(onPicked)
 
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri == null) {
-            currentOnResult(null)
+            currentOnPicked(null)
             return@rememberLauncherForActivityResult
         }
-        currentOnProcessing()
+        currentOnLoading()
         scope.launch {
-            val result = withContext(Dispatchers.Default) { readPassportFromUri(context, uri) }
-            currentOnResult(result)
+            val image = withContext(Dispatchers.IO) { loadUprightBitmap(context, uri) }
+            currentOnPicked(image?.let(::AndroidPickedImage))
         }
     }
 
@@ -255,14 +257,25 @@ internal actual fun rememberPassportGalleryPicker(
     }
 }
 
-private suspend fun readPassportFromUri(context: Context, uri: Uri): CameraScan {
-    val upright = runCatching {
-        val bitmap = decodeSampledBitmap(context, uri) ?: return CameraScan(null, null)
-        bitmap.uprightAndScaled(readExifRotation(context, uri))
-    }.getOrNull() ?: return CameraScan(data = null, image = null)
-    val data = runCatching { PassportTextReader.readMrz(InputImage.fromBitmap(upright, 0)) }.getOrNull()
-    return CameraScan(data = data, image = upright.toJpegBytes())
+private class AndroidPickedImage(private val bitmap: Bitmap) : PickedImage {
+    override val width: Int get() = bitmap.width
+    override val height: Int get() = bitmap.height
+
+    override fun toImageBitmap(): ImageBitmap = bitmap.asImageBitmap()
+
+    override suspend fun read(crop: IntRect?): CameraScan = withContext(Dispatchers.Default) {
+        val source = runCatching {
+            crop?.let { Bitmap.createBitmap(bitmap, it.left, it.top, it.width, it.height) } ?: bitmap
+        }.getOrDefault(bitmap)
+        val data = runCatching { PassportTextReader.readMrz(InputImage.fromBitmap(source, 0)) }.getOrNull()
+        CameraScan(data = data, image = source.toJpegBytes())
+    }
 }
+
+private fun loadUprightBitmap(context: Context, uri: Uri): Bitmap? =
+    runCatching {
+        decodeSampledBitmap(context, uri)?.uprightAndScaled(readExifRotation(context, uri))
+    }.getOrNull()
 
 private fun decodeSampledBitmap(context: Context, uri: Uri) = context.contentResolver.run {
     val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }

@@ -32,9 +32,13 @@ internal class ScannerState(
     var isFinished by mutableStateOf(false)
         private set
 
+    /** Gallery photo waiting for the user to crop it, when [PassportScannerConfig.cropGalleryImage] is on. */
+    var cropImage by mutableStateOf<PickedImage?>(null)
+        private set
+
     val isAutoScanEnabled: Boolean
         get() = !isProcessing && unreadableScan == null && reviewScan == null && expiredScan == null &&
-            !isTipsVisible && !isFinished
+            cropImage == null && !isTipsVisible && !isFinished
 
     fun onProcessingStarted() {
         if (!isFinished) isProcessing = true
@@ -42,6 +46,30 @@ internal class ScannerState(
 
     fun onGalleryCancelled() {
         isProcessing = false
+    }
+
+    /**
+     * Called with a photo picked from the gallery. Returns the photo when it should be read right
+     * away, or null when it's held in [cropImage] for the user to crop first.
+     */
+    fun onGalleryPicked(image: PickedImage): PickedImage? {
+        if (isFinished) return null
+        if (!config().cropGalleryImage) return image
+        isProcessing = false
+        cropImage = image
+        return null
+    }
+
+    /** Leaves the crop screen and returns the photo to read, which the caller then crops. */
+    fun confirmCrop(): PickedImage? {
+        val image = cropImage ?: return null
+        cropImage = null
+        onProcessingStarted()
+        return image
+    }
+
+    fun cancelCrop() {
+        cropImage = null
     }
 
     fun onScan(scan: CameraScan): PassportScanResult? {
@@ -100,6 +128,7 @@ internal class ScannerState(
         unreadableScan = null
         reviewScan = null
         expiredScan = null
+        cropImage = null
         return result
     }
 }

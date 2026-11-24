@@ -13,6 +13,8 @@ import androidx.compose.runtime.Immutable
  * @property showTorch show the flashlight button when the device has one.
  * @property rejectExpired when the scanned passport has expired, show
  *   [PassportScannerStrings.expiredTitle] and ask for another passport instead of returning it.
+ * @property cropGalleryImage after a photo is picked from the gallery, let the user crop it to the
+ *   passport page before it's read. The cropped photo is the one returned. Off by default.
  */
 @Immutable
 public data class PassportScannerConfig(
@@ -22,6 +24,7 @@ public data class PassportScannerConfig(
     val showTips: Boolean = true,
     val showTorch: Boolean = true,
     val rejectExpired: Boolean = false,
+    val cropGalleryImage: Boolean = false,
 )
 
 /** Text shown by [PassportScanner]. Override any value to change or translate it. */
@@ -74,4 +77,10 @@ public data class PassportScannerStrings(
         "Fit the whole page inside the frame and hold still for a moment.",
     ),
     val tipsDismiss: String = "Got it",
+
+    val cropTitle: String = "Crop photo",
+    val cropInstruction: String = "Drag the corners to fit the passport photo page",
+    val cropCancel: String = "Cancel",
+    val cropReset: String = "Reset",
+    val cropConfirm: String = "Continue",
 )
