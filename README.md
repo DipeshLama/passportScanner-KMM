@@ -27,8 +27,6 @@ Desktop (JVM), web (JS/Wasm) and `iosX64` (Intel simulators) are not supported.
 
 ## Installation
 
-Replace `<latest-version>` with the version on the Maven Central badge above (without the `v`).
-
 ```kotlin
 // build.gradle.kts of your shared module
 kotlin {
