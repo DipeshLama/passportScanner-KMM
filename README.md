@@ -1,6 +1,6 @@
 # Passport Scanner for Compose Multiplatform
 
-[![Maven Central](https://img.shields.io/maven-central/v/io.github.dipeshlama/passport-scanner?label=Maven%20Central&color=blue)](https://central.sonatype.com/artifact/io.github.dipeshlama/passport-scanner)
+[![Maven Central](https://img.shields.io/maven-metadata/v?metadataUrl=https%3A%2F%2Frepo1.maven.org%2Fmaven2%2Fio%2Fgithub%2Fdipeshlama%2Fpassport-scanner%2Fmaven-metadata.xml&label=Maven%20Central&color=blue)](https://central.sonatype.com/artifact/io.github.dipeshlama/passport-scanner)
 [![GitHub tag](https://img.shields.io/github/v/tag/DipeshLama/passportScanner-KMM?label=release&color=brightgreen)](https://github.com/DipeshLama/passportScanner-KMM/tags)
 [![License: MIT](https://img.shields.io/github/license/DipeshLama/passportScanner-KMM?color=yellow)](LICENSE)
 ![Platforms](https://img.shields.io/badge/platforms-Android%20%7C%20iOS-lightgrey)
