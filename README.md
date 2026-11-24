@@ -6,6 +6,9 @@
 ![Platforms](https://img.shields.io/badge/platforms-Android%20%7C%20iOS-lightgrey)
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.4.21-7F52FF?logo=kotlin&logoColor=white)
 ![Compose Multiplatform](https://img.shields.io/badge/Compose%20Multiplatform-1.12.2-4285F4?logo=jetpackcompose&logoColor=white)
+![Material 3](https://img.shields.io/badge/Material%203-1.12.0--alpha03-6750A4?logo=materialdesign&logoColor=white)
+![CameraX](https://img.shields.io/badge/CameraX-1.4.2-3DDC84?logo=android&logoColor=white)
+![ML Kit](https://img.shields.io/badge/ML%20Kit%20text%20recognition-19.0.1-4285F4?logo=google&logoColor=white)
 
 A Kotlin Multiplatform / Compose Multiplatform library that scans passports on **Android and iOS** from `commonMain`.
 
@@ -40,17 +43,7 @@ kotlin {
 
 The library is published to [Maven Central](https://central.sonatype.com/artifact/io.github.dipeshlama/passport-scanner), so `mavenCentral()` is all you need in your repositories.
 
-### Versions
-
-The latest release is built with these versions. Use the same or newer in your app to avoid dependency conflicts.
-
-| Library | Version |
-|---|---|
-| Compose Multiplatform | 1.12.2 |
-| Kotlin | 2.4.21 |
-| Material 3 (Compose Multiplatform) | 1.12.0-alpha03 |
-| CameraX | 1.4.2 |
-| ML Kit text recognition | 19.0.1 |
+Use the dependency versions in the badges above, or newer, to avoid conflicts.
 
 ### Platform setup
 
