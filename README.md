@@ -40,23 +40,6 @@ kotlin {
 }
 ```
 
-Or with a version catalog:
-
-```toml
-# gradle/libs.versions.toml
-[versions]
-passportScanner = "<latest-version>"
-
-[libraries]
-passport-scanner = { module = "io.github.dipeshlama:passport-scanner", version.ref = "passportScanner" }
-```
-
-```kotlin
-commonMain.dependencies {
-    implementation(libs.passport.scanner)
-}
-```
-
 The library is published to [Maven Central](https://central.sonatype.com/artifact/io.github.dipeshlama/passport-scanner), so `mavenCentral()` is all you need in your repositories.
 
 ### Versions
