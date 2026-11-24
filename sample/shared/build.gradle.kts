@@ -43,6 +43,7 @@ kotlin {
         }
         commonMain.dependencies {
             implementation(project(":passportscanner"))
+            implementation(project(":barcodescanner"))
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
             implementation(libs.compose.material3)

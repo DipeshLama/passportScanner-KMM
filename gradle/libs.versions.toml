@@ -15,6 +15,7 @@ exifinterface = "1.4.1"
 kotlinx-coroutines = "1.10.2"
 kotlinx-datetime = "0.7.1"
 mavenPublish = "0.34.0"
+mlkit-barcodeScanning = "17.3.0"
 mlkit-textRecognition = "19.0.1"
 navigationevent = "1.1.0"
 composeMultiplatform = "1.12.2"
@@ -45,6 +46,7 @@ androidx-camera-camera2 = { module = "androidx.camera:camera-camera2", version.r
 androidx-camera-lifecycle = { module = "androidx.camera:camera-lifecycle", version.ref = "camerax" }
 androidx-camera-view = { module = "androidx.camera:camera-view", version.ref = "camerax" }
 androidx-exifinterface = { module = "androidx.exifinterface:exifinterface", version.ref = "exifinterface" }
+mlkit-barcodeScanning = { module = "com.google.mlkit:barcode-scanning", version.ref = "mlkit-barcodeScanning" }
 mlkit-textRecognition = { module = "com.google.android.gms:play-services-mlkit-text-recognition", version.ref = "mlkit-textRecognition" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime" }

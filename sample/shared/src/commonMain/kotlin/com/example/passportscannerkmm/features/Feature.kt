@@ -1,6 +1,7 @@
 package com.example.passportscannerkmm.features
 
 import androidx.compose.runtime.Composable
+import com.example.passportscannerkmm.features.barcode.BarcodeScannerFeature
 import com.example.passportscannerkmm.features.passport.PassportScannerFeature
 
 /**
@@ -28,4 +29,5 @@ interface Feature {
 /** Registry of every feature shown in the demo, in display order. */
 val Features: List<Feature> = listOf(
     PassportScannerFeature,
+    BarcodeScannerFeature,
 )

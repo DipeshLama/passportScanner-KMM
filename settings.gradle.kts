@@ -28,6 +28,7 @@ dependencyResolutionManagement {
 }
 
 include(":passportscanner")
+include(":barcodescanner")
 
 // Sample app, in sample/. It depends on :passportscanner like a consumer would.
 include(":sample:androidApp")

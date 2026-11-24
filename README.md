@@ -1,13 +1,21 @@
-# Passport Scanner for Compose Multiplatform
+# Passport & Barcode Scanner for Compose Multiplatform
 
-[![Maven Central](https://img.shields.io/maven-metadata/v?metadataUrl=https%3A%2F%2Frepo1.maven.org%2Fmaven2%2Fio%2Fgithub%2Fdipeshlama%2Fpassport-scanner%2Fmaven-metadata.xml&label=Maven%20Central&color=blue)](https://central.sonatype.com/artifact/io.github.dipeshlama/passport-scanner)
+[![passport-scanner](https://img.shields.io/maven-metadata/v?metadataUrl=https%3A%2F%2Frepo1.maven.org%2Fmaven2%2Fio%2Fgithub%2Fdipeshlama%2Fpassport-scanner%2Fmaven-metadata.xml&label=passport-scanner&color=blue)](https://central.sonatype.com/artifact/io.github.dipeshlama/passport-scanner)
+[![barcode-scanner](https://img.shields.io/maven-metadata/v?metadataUrl=https%3A%2F%2Frepo1.maven.org%2Fmaven2%2Fio%2Fgithub%2Fdipeshlama%2Fbarcode-scanner%2Fmaven-metadata.xml&label=barcode-scanner&color=blue)](https://central.sonatype.com/artifact/io.github.dipeshlama/barcode-scanner)
 [![GitHub tag](https://img.shields.io/github/v/tag/DipeshLama/passportScanner-KMM?label=release&color=brightgreen)](https://github.com/DipeshLama/passportScanner-KMM/tags)
 [![License: MIT](https://img.shields.io/github/license/DipeshLama/passportScanner-KMM?color=yellow)](LICENSE)
 ![Platforms](https://img.shields.io/badge/platforms-Android%20%7C%20iOS-lightgrey)
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.4.21-7F52FF?logo=kotlin&logoColor=white)
 ![Compose Multiplatform](https://img.shields.io/badge/Compose%20Multiplatform-1.12.2-4285F4?logo=jetpackcompose&logoColor=white)
 
-A Kotlin Multiplatform / Compose Multiplatform library that scans passports on **Android and iOS** from `commonMain`.
+Kotlin Multiplatform / Compose Multiplatform scanners for **Android and iOS**, used from `commonMain`. There are two libraries, and you can add either one or both:
+
+| Artifact | Scans |
+|---|---|
+| `passport-scanner` | Passport photo pages (the MRZ) |
+| `barcode-scanner` | QR codes and barcodes |
+
+**passport-scanner**
 
 - Live camera scanning that finishes on its own once the passport is held steady inside the frame
 - Manual capture and gallery import for when auto-scan can't read the passport, with optional cropping of gallery photos
@@ -16,11 +24,17 @@ A Kotlin Multiplatform / Compose Multiplatform library that scans passports on *
 - Camera permission handling, an optional review sheet and a tips sheet, with all text replaceable for localisation
 - OCR runs on the device: ML Kit on Android, Apple Vision on iOS. Nothing is sent over the network.
 
+**barcode-scanner**
+
+- Live scanning that returns the first code inside a square frame (or a wider frame for 1D barcodes)
+- QR, Aztec, Data Matrix, PDF417, EAN-13/8, UPC-A/E, Code 128/39/93, Codabar and ITF, with the formats to read configurable
+- Flashlight button, gallery import with optional cropping, and camera permission handling
+
 ## Supported platforms
 
-| Platform | Target | Minimum version | Camera / OCR |
+| Platform | Target | Minimum version | Camera / recognition |
 |---|---|---|---|
-| Android | `android` | API 24 (Android 7.0) | CameraX + ML Kit Text Recognition |
+| Android | `android` | API 24 (Android 7.0) | CameraX + ML Kit (text recognition, barcode scanning) |
 | iOS (device) | `iosArm64` | iOS 14 | AVFoundation + Apple Vision |
 
 Desktop (JVM), web (JS/Wasm) and `iosX64` (Intel simulators) are not supported.
@@ -33,16 +47,17 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation("io.github.dipeshlama:passport-scanner:<latest-version>")
+            implementation("io.github.dipeshlama:barcode-scanner:<latest-version>")
         }
     }
 }
 ```
 
-The library is published to [Maven Central](https://central.sonatype.com/artifact/io.github.dipeshlama/passport-scanner), so `mavenCentral()` is all you need in your repositories.
+Both libraries are published to Maven Central ([passport-scanner](https://central.sonatype.com/artifact/io.github.dipeshlama/passport-scanner), [barcode-scanner](https://central.sonatype.com/artifact/io.github.dipeshlama/barcode-scanner)), so `mavenCentral()` is all you need in your repositories.
 
 ### Versions
 
-The latest release is built with these versions. Use the same or newer in your app to avoid dependency conflicts.
+The latest releases are built with these versions. Use the same or newer in your app to avoid dependency conflicts.
 
 | Library | Version |
 |---|---|
@@ -50,22 +65,23 @@ The latest release is built with these versions. Use the same or newer in your a
 | Kotlin | 2.4.21 |
 | Material 3 (Compose Multiplatform) | 1.12.0-alpha03 |
 | CameraX | 1.4.2 |
-| ML Kit text recognition | 19.0.1 |
+| ML Kit text recognition (passport-scanner) | 19.0.1 |
+| ML Kit barcode scanning (barcode-scanner) | 17.3.0 |
 
 ### Platform setup
 
-**Android:** nothing to do. The library's manifest declares the `CAMERA` permission. It also tells Play services to download the ML Kit text model when the app is installed. If your app already sets `com.google.mlkit.vision.DEPENDENCIES` (for example `ocr,face`), add `tools:replace="android:value"` to your entry and keep `ocr` in its value.
+**Android:** nothing to do. Both libraries' manifests declare the `CAMERA` permission. `passport-scanner`'s manifest also tells Play services to download the ML Kit text model when the app is installed. If your app already sets `com.google.mlkit.vision.DEPENDENCIES` (for example `ocr,face`), add `tools:replace="android:value"` to your entry and keep `ocr` in its value. `barcode-scanner` bundles its ML Kit model (about 2.4 MB), so it needs no manifest entry and works offline straight after install.
 
 **iOS:** add a camera usage description to your `Info.plist`:
 
 ```xml
 <key>NSCameraUsageDescription</key>
-<string>The camera is used to scan your passport.</string>
+<string>The camera is used to scan your passport and QR codes.</string>
 ```
 
 The gallery uses `PHPickerViewController`, which needs no photo library permission.
 
-## Usage
+## Passport scanner
 
 ```kotlin
 @Composable
@@ -234,9 +250,55 @@ val data: PassportMrzData? = MrzParser.parse(listOf(line1, line2))
 
 `MrzParser.find(List<OcrLine>)` does the same with line positions, which lets it rebuild MRZ lines that the OCR engine split into pieces.
 
+## QR & barcode scanner
+
+```kotlin
+@Composable
+fun ScanCodeScreen() {
+    var scanning by remember { mutableStateOf(false) }
+
+    if (scanning) {
+        BarcodeScanner(
+            onResult = { result ->
+                scanning = false
+                // result.value: the decoded text; result.format: BarcodeFormat.QrCode, Ean13, ...
+            },
+            onCancel = { scanning = false },
+        )
+    } else {
+        Button(onClick = { scanning = true }) { Text("Scan code") }
+    }
+}
+```
+
+`BarcodeScanner` is a full-screen composable that calls `onResult` once, and `onCancel` handles both the back button and system back. There is no review sheet: the first code read inside the frame is returned right away, with a short vibration.
+
+### Configuration
+
+```kotlin
+BarcodeScanner(
+    onResult = { /* ... */ },
+    onCancel = { /* ... */ },
+    config = BarcodeScannerConfig(
+        formats = BarcodeFormat.All,  // or setOf(BarcodeFormat.QrCode), BarcodeFormat.Linear, ...
+        frameAspectRatio = 1f,        // width / height of the frame: 1f square for QR, ~2f for 1D barcodes
+        allowGallery = true,          // "Upload from gallery" button
+        cropGalleryImage = false,     // true: let the user crop a gallery photo before it's read
+        showTorch = true,             // flashlight button (hidden if the device has none)
+        hapticFeedback = true,        // vibrate when a code is read
+    ),
+)
+```
+
+Limiting `formats` to what you need scans faster and keeps nearby unrelated codes from being picked up. If a gallery photo has no code, the scanner shows `strings.noCodeFound` and keeps scanning.
+
+### Customising the UI
+
+Change any text with `strings = BarcodeScannerStrings(...)` and the overlay colours with `colors = BarcodeScannerDefaults.colors(...)`. Replace parts of the UI with the `title`, `instruction` and `galleryButton` slots. The built-in pieces are public in `BarcodeScannerDefaults` (`Title`, `Instruction`, `GalleryButton`).
+
 ## Sample app
 
-The `sample/` folder holds a small app that opens the scanner and shows the result. It has a switch to try gallery cropping on and off. It is separate from the library in `passportscanner/` and uses it the way your own app would.
+The `sample/` folder holds a small app with both scanners. It shows each result, and has switches for gallery cropping and the barcode-only (wide frame) mode. It is separate from the library in `passportscanner/` and uses it the way your own app would.
 
 - `sample/androidApp`: the Android app. `sample/iosApp`: the iOS app. `sample/shared`: the Compose screen both of them show.
 - Android: `./gradlew :sample:androidApp:installDebug`
@@ -245,7 +307,8 @@ The `sample/` folder holds a small app that opens the scanner and shows the resu
 ## Limitations
 
 - TD3 (passport booklet) MRZs only; ID cards (TD1/TD2) and visas aren't parsed yet.
-- The live scanner assumes the phone is held in portrait.
+- Both live scanners assume the phone is held in portrait.
+- The barcode scanner returns one code per scan, as text. Codes without a text value are skipped.
 - The review sheet shows dates in ISO format (`yyyy-MM-dd`).
 
 ## License
