@@ -140,7 +140,7 @@ PassportScanner(
 )
 ```
 
-With `cropGalleryImage = true`, a photo picked from the gallery opens in a crop screen first. The user drags the corners or edges to fit the passport page, then taps **Continue**. Only the cropped area is read, and it is also the image returned in the result. **Cancel** or system back goes back to the camera. The crop screen uses `colors` (`frameCorners` for the crop frame, `scrim` outside it, `permissionButtonContainer`/`permissionButtonContent` for **Continue**) and `strings.crop*` for its text. When the flag is off, nothing changes: the photo is read as soon as it's picked.
+With `cropGalleryImage = true`, the user can crop a gallery photo before it's read. Only the cropped area is read and returned.
 
 With `rejectExpired = true`, an expired passport is never returned: the scanner shows `strings.expiredTitle` with a "Scan another passport" button. A passport is still valid on its expiry date. To check it yourself instead, use `result.data.isExpired()`.
 
