@@ -267,13 +267,6 @@ The `sample/` folder holds a small app that opens the scanner and shows the resu
 - The live scanner assumes the phone is held in portrait.
 - The review sheet shows dates in ISO format (`yyyy-MM-dd`).
 
-## Changelog
-
-- **1.1.0**: optional crop step for gallery photos (`cropGalleryImage`).
-- **1.0.0**: first release.
-
-See [Releases](https://github.com/DipeshLama/passportScanner-KMM/releases) for full notes.
-
 ## License
 
 MIT License. See [LICENSE](LICENSE).
