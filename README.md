@@ -10,7 +10,7 @@
 A Kotlin Multiplatform / Compose Multiplatform library that scans passports on **Android and iOS** from `commonMain`.
 
 - Live camera scanning that finishes on its own once the passport is held steady inside the frame
-- Manual capture and gallery import for when auto-scan can't read the passport
+- Manual capture and gallery import for when auto-scan can't read the passport, with optional cropping of gallery photos
 - Flashlight button for dim rooms, and an optional check that rejects expired passports
 - ICAO 9303 TD3 MRZ parser that only accepts a result when every check digit validates, so a misread frame is rejected instead of returning wrong details
 - Camera permission handling, an optional review sheet and a tips sheet, with all text replaceable for localisation
@@ -255,7 +255,7 @@ val data: PassportMrzData? = MrzParser.parse(listOf(line1, line2))
 
 ## Sample app
 
-The `sample/` folder holds a small app that opens the scanner and shows the result. It is separate from the library in `passportscanner/` and uses it the way your own app would.
+The `sample/` folder holds a small app that opens the scanner and shows the result. It has a switch to try gallery cropping on and off. It is separate from the library in `passportscanner/` and uses it the way your own app would.
 
 - `sample/androidApp`: the Android app. `sample/iosApp`: the iOS app. `sample/shared`: the Compose screen both of them show.
 - Android: `./gradlew :sample:androidApp:installDebug`
@@ -266,6 +266,13 @@ The `sample/` folder holds a small app that opens the scanner and shows the resu
 - TD3 (passport booklet) MRZs only; ID cards (TD1/TD2) and visas aren't parsed yet.
 - The live scanner assumes the phone is held in portrait.
 - The review sheet shows dates in ISO format (`yyyy-MM-dd`).
+
+## Changelog
+
+- **1.1.0**: optional crop step for gallery photos (`cropGalleryImage`).
+- **1.0.0**: first release.
+
+See [Releases](https://github.com/DipeshLama/passportScanner-KMM/releases) for full notes.
 
 ## License
 
