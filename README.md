@@ -27,14 +27,33 @@ Desktop (JVM), web (JS/Wasm) and `iosX64` (Intel simulators) are not supported.
 
 ## Installation
 
+Replace `<latest-version>` with the version on the Maven Central badge above (without the `v`).
+
 ```kotlin
 // build.gradle.kts of your shared module
 kotlin {
     sourceSets {
         commonMain.dependencies {
-            implementation("io.github.dipeshlama:passport-scanner:1.0.0")
+            implementation("io.github.dipeshlama:passport-scanner:<latest-version>")
         }
     }
+}
+```
+
+Or with a version catalog:
+
+```toml
+# gradle/libs.versions.toml
+[versions]
+passportScanner = "<latest-version>"
+
+[libraries]
+passport-scanner = { module = "io.github.dipeshlama:passport-scanner", version.ref = "passportScanner" }
+```
+
+```kotlin
+commonMain.dependencies {
+    implementation(libs.passport.scanner)
 }
 ```
 
@@ -42,7 +61,7 @@ The library is published to [Maven Central](https://central.sonatype.com/artifac
 
 ### Versions
 
-Version 1.0.0 is built with these versions. Use the same or newer in your app to avoid dependency conflicts.
+The latest release is built with these versions. Use the same or newer in your app to avoid dependency conflicts.
 
 | Library | Version |
 |---|---|
