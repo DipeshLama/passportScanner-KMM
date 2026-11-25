@@ -48,7 +48,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation("io.github.dipeshlama:passport-scanner:1.2.0")
-            implementation("io.github.dipeshlama:barcode-scanner:1.0.0")
+            implementation("io.github.dipeshlama:barcode-scanner:1.0.1")
         }
     }
 }
