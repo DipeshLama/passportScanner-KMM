@@ -19,6 +19,16 @@ internal fun appleBarcode(symbology: String, value: String, formats: Set<Barcode
     return if (format in formats) BarcodeScanResult(value, format) else null
 }
 
+/**
+ * The Vision symbologies to ask for so that only [formats] are detected, picked from [supported]
+ * (what the running iOS version's request can read). EAN-13 is kept for UPC-A, which Vision
+ * reports as EAN-13 with a leading 0.
+ */
+internal fun appleSymbologiesFor(supported: List<String>, formats: Set<BarcodeFormat>): List<String> {
+    val wanted = if (BarcodeFormat.UpcA in formats) formats + BarcodeFormat.Ean13 else formats
+    return supported.filter { appleFormat(it) in wanted }
+}
+
 private fun appleFormat(symbology: String): BarcodeFormat? =
     when (symbology.removePrefix("VNBarcodeSymbology").lowercase()) {
         "qr", "microqr" -> BarcodeFormat.QrCode

@@ -12,6 +12,7 @@ import kotlinx.cinterop.usePinned
 import platform.CoreGraphics.CGRectMake
 import platform.CoreGraphics.CGSizeMake
 import platform.Foundation.NSData
+import platform.Foundation.NSSelectorFromString
 import platform.UIKit.UIGraphicsImageRenderer
 import platform.UIKit.UIGraphicsImageRendererFormat
 import platform.UIKit.UIImage
@@ -34,7 +35,8 @@ internal object BarcodeReader {
         imageHeight: Int,
         region: IntRect? = null
     ): BarcodeScanResult? {
-        fun request() = VNDetectBarcodesRequest().apply {
+        fun request(revision1: Boolean) = VNDetectBarcodesRequest().apply {
+            if (revision1) revision = VNDetectBarcodesRequestRevision1
             if (region != null && imageWidth > 0 && imageHeight > 0) {
                 // Vision's origin is bottom-left.
                 regionOfInterest = CGRectMake(
@@ -44,12 +46,13 @@ internal object BarcodeReader {
                     height = region.height.toDouble() / imageHeight
                 )
             }
+            limitTo(formats)
         }
 
-        var request = request()
+        var request = request(revision1 = false)
         if (!handler.performRequests(listOf(request), null)) {
             // Newer revisions fail on some simulators; revision 1 runs everywhere.
-            request = request().apply { revision = VNDetectBarcodesRequestRevision1 }
+            request = request(revision1 = true)
             if (!handler.performRequests(listOf(request), null)) return null
         }
 
@@ -60,6 +63,29 @@ internal object BarcodeReader {
                 val symbology = observation.symbology ?: return@firstNotNullOfOrNull null
                 appleBarcode(symbology, value, formats)
             }
+    }
+
+    /**
+     * Makes Vision look only for [formats], so it skips the work for the rest. Results are still
+     * checked with [appleBarcode]. With every format, or if none of [formats] is supported here,
+     * the request is left as is (all symbologies).
+     */
+    private fun VNDetectBarcodesRequest.limitTo(formats: Set<BarcodeFormat>) {
+        if (formats.containsAll(BarcodeFormat.All)) return
+        val wanted = appleSymbologiesFor(supportedSymbologies(), formats)
+        if (wanted.isNotEmpty()) symbologies = wanted
+    }
+
+    /** The symbologies this request's revision can read, by name. */
+    @Suppress("DEPRECATION")
+    private fun VNDetectBarcodesRequest.supportedSymbologies(): List<String> {
+        val symbologies = if (respondsToSelector(NSSelectorFromString("supportedSymbologiesAndReturnError:"))) {
+            // iOS 15+: depends on the request's revision.
+            supportedSymbologiesAndReturnError(null)
+        } else {
+            VNDetectBarcodesRequest.supportedSymbologies()
+        }
+        return symbologies.orEmpty().filterIsInstance<String>()
     }
 }
 

@@ -28,6 +28,35 @@ class AppleSymbologyTest {
         assertNull(appleBarcode("VNBarcodeSymbologyQR", "hi", setOf(BarcodeFormat.Ean13)))
     }
 
+    private val supported = listOf(
+        "VNBarcodeSymbologyQR", "VNBarcodeSymbologyMicroQR", "VNBarcodeSymbologyAztec",
+        "VNBarcodeSymbologyEAN13", "VNBarcodeSymbologyEAN8", "VNBarcodeSymbologyUPCE",
+        "VNBarcodeSymbologyCode128", "VNBarcodeSymbologyITF14", "VNBarcodeSymbologyI2of5",
+        "VNBarcodeSymbologyGS1DataBar",
+    )
+
+    @Test
+    fun requestsOnlyTheSymbologiesOfTheChosenFormats() {
+        assertEquals(
+            listOf("VNBarcodeSymbologyQR", "VNBarcodeSymbologyMicroQR"),
+            appleSymbologiesFor(supported, setOf(BarcodeFormat.QrCode))
+        )
+        assertEquals(
+            listOf("VNBarcodeSymbologyITF14", "VNBarcodeSymbologyI2of5"),
+            appleSymbologiesFor(supported, setOf(BarcodeFormat.Itf))
+        )
+    }
+
+    @Test
+    fun requestsEan13ForUpcA() {
+        assertEquals(listOf("VNBarcodeSymbologyEAN13"), appleSymbologiesFor(supported, setOf(BarcodeFormat.UpcA)))
+    }
+
+    @Test
+    fun requestsNothingForFormatsThisVersionCantRead() {
+        assertEquals(emptyList(), appleSymbologiesFor(supported, setOf(BarcodeFormat.Codabar)))
+    }
+
     @Test
     fun reportsEan13WithLeadingZeroAsUpcA() {
         assertEquals(
