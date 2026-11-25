@@ -18,6 +18,7 @@ import io.github.dipeshlama.barcodescanner.BarcodeFormat
 import io.github.dipeshlama.barcodescanner.BarcodeScanResult
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.autoreleasepool
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -140,13 +141,17 @@ private class BarcodeCaptureSession(
     private val onTorchChanged: (hasTorch: Boolean, isOn: Boolean) -> Unit
 ) : NSObject(), AVCaptureVideoDataOutputSampleBufferDelegateProtocol {
     private val session = AVCaptureSession()
-    private val queue = dispatch_queue_create("io.github.dipeshlama.barcodescanner", null)
+    // Camera frames (and their OCR/decoding) run on [videoQueue]. Session setup and the torch use
+    // [sessionQueue], so they don't wait behind frames that are still being read.
+    private val videoQueue = dispatch_queue_create("io.github.dipeshlama.barcodescanner.video", null)
+    private val sessionQueue = dispatch_queue_create("io.github.dipeshlama.barcodescanner.session", null)
+    private val frameReleaser = CameraFrameReleaser()
 
     private val autoScanEnabled = AtomicInt(1)
     private val hasDelivered = AtomicInt(0)
     private var isConfigured = false
 
-    // Only touched on [queue].
+    // Only touched on [sessionQueue].
     private var device: AVCaptureDevice? = null
 
     val crop = AtomicReference<PreviewCrop?>(null)
@@ -162,20 +167,20 @@ private class BarcodeCaptureSession(
     }
 
     fun start() {
-        dispatch_async(queue) {
+        dispatch_async(sessionQueue) {
             if (!isConfigured) isConfigured = configure()
             if (isConfigured && !session.running) session.startRunning()
         }
     }
 
     fun stop() {
-        dispatch_async(queue) {
+        dispatch_async(sessionQueue) {
             if (session.running) session.stopRunning()
         }
     }
 
     fun setTorch(on: Boolean) {
-        dispatch_async(queue) {
+        dispatch_async(sessionQueue) {
             val device = device ?: return@dispatch_async
             val mode = if (on) AVCaptureTorchModeOn else AVCaptureTorchModeOff
             if (device.hasTorch && device.isTorchModeSupported(mode) && device.lockForConfiguration(null)) {
@@ -203,7 +208,7 @@ private class BarcodeCaptureSession(
         if (session.canAddInput(input)) session.addInput(input)
         val output = AVCaptureVideoDataOutput().apply {
             alwaysDiscardsLateVideoFrames = true
-            setSampleBufferDelegate(this@BarcodeCaptureSession, queue)
+            setSampleBufferDelegate(this@BarcodeCaptureSession, videoQueue)
         }
         if (session.canAddOutput(output)) session.addOutput(output)
         session.commitConfiguration()
@@ -245,6 +250,11 @@ private class BarcodeCaptureSession(
         fromConnection: AVCaptureConnection
     ) {
         if (autoScanEnabled.value != 1 || hasDelivered.value != 0) return
+        autoreleasepool { readFrame(didOutputSampleBuffer) }
+        frameReleaser.onFrameRead()
+    }
+
+    private fun readFrame(didOutputSampleBuffer: CMSampleBufferRef?) {
         val pixelBuffer = CMSampleBufferGetImageBuffer(didOutputSampleBuffer) ?: return
 
         // Camera frames are landscape; the UI is portrait.

@@ -18,6 +18,7 @@ import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.CValue
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
+import kotlinx.cinterop.autoreleasepool
 import kotlinx.cinterop.useContents
 import kotlinx.cinterop.usePinned
 import io.github.dipeshlama.passportscanner.mrz.PassportMrzData
@@ -148,8 +149,12 @@ private class PassportCaptureSession(
     private val onTorchChanged: (hasTorch: Boolean, isOn: Boolean) -> Unit
 ) : NSObject(), AVCaptureVideoDataOutputSampleBufferDelegateProtocol {
     private val session = AVCaptureSession()
-    private val queue = dispatch_queue_create("io.github.dipeshlama.passportscanner", null)
+    // Camera frames (and their OCR/decoding) run on [videoQueue]. Session setup and the torch use
+    // [sessionQueue], so they don't wait behind frames that are still being read.
+    private val videoQueue = dispatch_queue_create("io.github.dipeshlama.passportscanner.video", null)
+    private val sessionQueue = dispatch_queue_create("io.github.dipeshlama.passportscanner.session", null)
     private val ciContext = CIContext()
+    private val frameReleaser = CameraFrameReleaser()
 
     private val autoScanEnabled = AtomicInt(1)
     private val hasDelivered = AtomicInt(0)
@@ -157,7 +162,7 @@ private class PassportCaptureSession(
     private val captureRequested = AtomicInt(0)
     private var isConfigured = false
 
-    // Only touched on [queue].
+    // Only touched on [sessionQueue].
     private var device: AVCaptureDevice? = null
 
     val crop = AtomicReference<PreviewCrop?>(null)
@@ -176,20 +181,20 @@ private class PassportCaptureSession(
     }
 
     fun start() {
-        dispatch_async(queue) {
+        dispatch_async(sessionQueue) {
             if (!isConfigured) isConfigured = configure()
             if (isConfigured && !session.running) session.startRunning()
         }
     }
 
     fun stop() {
-        dispatch_async(queue) {
+        dispatch_async(sessionQueue) {
             if (session.running) session.stopRunning()
         }
     }
 
     fun setTorch(on: Boolean) {
-        dispatch_async(queue) {
+        dispatch_async(sessionQueue) {
             val device = device ?: return@dispatch_async
             val mode = if (on) AVCaptureTorchModeOn else AVCaptureTorchModeOff
             if (device.hasTorch && device.isTorchModeSupported(mode) && device.lockForConfiguration(null)) {
@@ -217,7 +222,7 @@ private class PassportCaptureSession(
         if (session.canAddInput(input)) session.addInput(input)
         val output = AVCaptureVideoDataOutput().apply {
             alwaysDiscardsLateVideoFrames = true
-            setSampleBufferDelegate(this@PassportCaptureSession, queue)
+            setSampleBufferDelegate(this@PassportCaptureSession, videoQueue)
         }
         if (session.canAddOutput(output)) session.addOutput(output)
         session.commitConfiguration()
@@ -251,6 +256,11 @@ private class PassportCaptureSession(
         didOutputSampleBuffer: CMSampleBufferRef?,
         fromConnection: AVCaptureConnection
     ) {
+        autoreleasepool { readFrame(didOutputSampleBuffer) }
+        frameReleaser.onFrameRead()
+    }
+
+    private fun readFrame(didOutputSampleBuffer: CMSampleBufferRef?) {
         val isManualCapture = captureRequested.compareAndSet(1, 0)
         val isAutoScan = autoScanEnabled.value == 1 && hasDelivered.value == 0
         if (!isManualCapture && !isAutoScan) {
