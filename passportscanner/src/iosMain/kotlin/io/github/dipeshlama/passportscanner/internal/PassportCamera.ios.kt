@@ -17,7 +17,10 @@ import androidx.compose.ui.viewinterop.UIKitView
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.CValue
 import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.useContents
+import kotlinx.cinterop.usePinned
+import io.github.dipeshlama.passportscanner.mrz.PassportMrzData
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -59,6 +62,7 @@ import platform.CoreVideo.CVPixelBufferGetHeight
 import platform.CoreVideo.CVPixelBufferGetWidth
 import platform.CoreVideo.CVPixelBufferRef
 import platform.Foundation.NSData
+import platform.Foundation.dataWithBytes
 import platform.ImageIO.kCGImagePropertyOrientationRight
 import platform.PhotosUI.PHPickerConfiguration
 import platform.PhotosUI.PHPickerFilter
@@ -426,6 +430,17 @@ private class IosPickedImage(
             croppedCg?.let { CGImageRelease(it) }
         }
     }
+
+    override suspend fun readMrz(): PassportMrzData? = withContext(Dispatchers.Default) {
+        val handler = VNImageRequestHandler(cGImage = cgImage, options = emptyMap<Any?, Any?>())
+        PassportTextReader.findMrz(handler = handler, imageWidth = width, imageHeight = height)?.data
+    }
+}
+
+internal actual fun decodePassportImage(bytes: ByteArray): PickedImage? {
+    if (bytes.isEmpty()) return null
+    val data = bytes.usePinned { NSData.dataWithBytes(it.addressOf(0), bytes.size.toULong()) }
+    return loadPickedImage(data)
 }
 
 private fun topViewController(): UIViewController? {

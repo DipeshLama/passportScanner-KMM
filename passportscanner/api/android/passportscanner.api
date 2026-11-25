@@ -1,3 +1,55 @@
+public final class io/github/dipeshlama/passportscanner/PassportImageScanner {
+	public static final field $stable I
+	public static final field INSTANCE Lio/github/dipeshlama/passportscanner/PassportImageScanner;
+	public final fun scanImage ([BLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract interface class io/github/dipeshlama/passportscanner/PassportScanEvent {
+}
+
+public final class io/github/dipeshlama/passportscanner/PassportScanEvent$Cancelled : io/github/dipeshlama/passportscanner/PassportScanEvent {
+	public static final field $stable I
+	public static final field INSTANCE Lio/github/dipeshlama/passportscanner/PassportScanEvent$Cancelled;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/dipeshlama/passportscanner/PassportScanEvent$Completed : io/github/dipeshlama/passportscanner/PassportScanEvent {
+	public static final field $stable I
+	public fun <init> (Lio/github/dipeshlama/passportscanner/PassportScanResult;)V
+	public final fun getResult ()Lio/github/dipeshlama/passportscanner/PassportScanResult;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/dipeshlama/passportscanner/PassportScanEvent$Expired : io/github/dipeshlama/passportscanner/PassportScanEvent {
+	public static final field $stable I
+	public fun <init> (Lio/github/dipeshlama/passportscanner/mrz/PassportMrzData;)V
+	public final fun getData ()Lio/github/dipeshlama/passportscanner/mrz/PassportMrzData;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/dipeshlama/passportscanner/PassportScanEvent$Unreadable : io/github/dipeshlama/passportscanner/PassportScanEvent {
+	public static final field $stable I
+	public static final field INSTANCE Lio/github/dipeshlama/passportscanner/PassportScanEvent$Unreadable;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/dipeshlama/passportscanner/PassportScanPhase : java/lang/Enum {
+	public static final field Cropping Lio/github/dipeshlama/passportscanner/PassportScanPhase;
+	public static final field Expired Lio/github/dipeshlama/passportscanner/PassportScanPhase;
+	public static final field Finished Lio/github/dipeshlama/passportscanner/PassportScanPhase;
+	public static final field Processing Lio/github/dipeshlama/passportscanner/PassportScanPhase;
+	public static final field Review Lio/github/dipeshlama/passportscanner/PassportScanPhase;
+	public static final field Scanning Lio/github/dipeshlama/passportscanner/PassportScanPhase;
+	public static final field Unreadable Lio/github/dipeshlama/passportscanner/PassportScanPhase;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/github/dipeshlama/passportscanner/PassportScanPhase;
+	public static fun values ()[Lio/github/dipeshlama/passportscanner/PassportScanPhase;
+}
+
 public abstract interface class io/github/dipeshlama/passportscanner/PassportScanResult {
 	public abstract fun getImage ()[B
 }
@@ -73,6 +125,7 @@ public final class io/github/dipeshlama/passportscanner/PassportScannerDefaults 
 }
 
 public final class io/github/dipeshlama/passportscanner/PassportScannerKt {
+	public static final fun PassportScanner (Lio/github/dipeshlama/passportscanner/PassportScannerState;Landroidx/compose/ui/Modifier;Lio/github/dipeshlama/passportscanner/PassportScannerConfig;Lio/github/dipeshlama/passportscanner/PassportScannerStrings;Lio/github/dipeshlama/passportscanner/PassportScannerColors;Lio/github/dipeshlama/passportscanner/PassportScannerSheetColors;Lio/github/dipeshlama/passportscanner/PassportScannerSheetTypography;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function4;Lkotlin/jvm/functions/Function4;Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;III)V
 	public static final fun PassportScanner (Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function0;Landroidx/compose/ui/Modifier;Lio/github/dipeshlama/passportscanner/PassportScannerConfig;Lio/github/dipeshlama/passportscanner/PassportScannerStrings;Lio/github/dipeshlama/passportscanner/PassportScannerColors;Lio/github/dipeshlama/passportscanner/PassportScannerSheetColors;Lio/github/dipeshlama/passportscanner/PassportScannerSheetTypography;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function4;Lkotlin/jvm/functions/Function4;Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;III)V
 }
 
@@ -101,6 +154,23 @@ public final class io/github/dipeshlama/passportscanner/PassportScannerSheetTypo
 	public final fun getLabel ()Landroidx/compose/ui/text/TextStyle;
 	public final fun getTitle ()Landroidx/compose/ui/text/TextStyle;
 	public final fun getValue ()Landroidx/compose/ui/text/TextStyle;
+}
+
+public final class io/github/dipeshlama/passportscanner/PassportScannerState {
+	public static final field $stable I
+	public final fun capture ()V
+	public final fun getCanCapture ()Z
+	public final fun getEvents ()Lkotlinx/coroutines/flow/Flow;
+	public final fun getHasTorch ()Z
+	public final fun getPhase ()Lio/github/dipeshlama/passportscanner/PassportScanPhase;
+	public final fun getResult ()Lio/github/dipeshlama/passportscanner/PassportScanResult;
+	public final fun isTorchOn ()Z
+	public final fun restart ()V
+	public final fun setTorch (Z)V
+}
+
+public final class io/github/dipeshlama/passportscanner/PassportScannerStateKt {
+	public static final fun rememberPassportScannerState (Landroidx/compose/runtime/Composer;I)Lio/github/dipeshlama/passportscanner/PassportScannerState;
 }
 
 public final class io/github/dipeshlama/passportscanner/PassportScannerStrings {
@@ -226,6 +296,7 @@ public final class io/github/dipeshlama/passportscanner/mrz/MrzParser {
 	public static final field $stable I
 	public static final field INSTANCE Lio/github/dipeshlama/passportscanner/mrz/MrzParser;
 	public final fun find (Ljava/util/List;)Lio/github/dipeshlama/passportscanner/mrz/MrzMatch;
+	public final fun parse (Ljava/lang/String;)Lio/github/dipeshlama/passportscanner/mrz/PassportMrzData;
 	public final fun parse (Ljava/util/List;)Lio/github/dipeshlama/passportscanner/mrz/PassportMrzData;
 }
 

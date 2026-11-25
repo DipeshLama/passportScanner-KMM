@@ -39,11 +39,14 @@ import androidx.exifinterface.media.ExifInterface
 import androidx.lifecycle.Observer
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import io.github.dipeshlama.passportscanner.mrz.MrzParser
+import io.github.dipeshlama.passportscanner.mrz.PassportMrzData
 import com.google.android.gms.tasks.Tasks
 import com.google.mlkit.vision.common.InputImage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.ByteArrayInputStream
+import java.io.InputStream
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -270,23 +273,35 @@ private class AndroidPickedImage(private val bitmap: Bitmap) : PickedImage {
         val data = runCatching { PassportTextReader.readMrz(InputImage.fromBitmap(source, 0)) }.getOrNull()
         CameraScan(data = data, image = source.toJpegBytes())
     }
+
+    override suspend fun readMrz(): PassportMrzData? = withContext(Dispatchers.Default) {
+        PassportTextReader.readMrz(InputImage.fromBitmap(bitmap, 0))
+    }
 }
+
+internal actual fun decodePassportImage(bytes: ByteArray): PickedImage? =
+    runCatching {
+        val open = { ByteArrayInputStream(bytes) }
+        val rotation = runCatching { open().use { ExifInterface(it).rotationDegrees } }.getOrDefault(0)
+        decodeSampledBitmap(open)?.uprightAndScaled(rotation)
+    }.getOrNull()?.let(::AndroidPickedImage)
 
 private fun loadUprightBitmap(context: Context, uri: Uri): Bitmap? =
     runCatching {
-        decodeSampledBitmap(context, uri)?.uprightAndScaled(readExifRotation(context, uri))
+        decodeSampledBitmap { context.contentResolver.openInputStream(uri) }
+            ?.uprightAndScaled(readExifRotation(context, uri))
     }.getOrNull()
 
-private fun decodeSampledBitmap(context: Context, uri: Uri) = context.contentResolver.run {
+private fun decodeSampledBitmap(open: () -> InputStream?): Bitmap? {
     val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-    openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, bounds) }
+    open()?.use { BitmapFactory.decodeStream(it, null, bounds) }
     val longestEdge = maxOf(bounds.outWidth, bounds.outHeight)
-    if (longestEdge <= 0) return@run null
+    if (longestEdge <= 0) return null
 
     var sampleSize = 1
     while (longestEdge / (sampleSize * 2) >= PASSPORT_IMAGE_MAX_EDGE) sampleSize *= 2
     val options = BitmapFactory.Options().apply { inSampleSize = sampleSize }
-    openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, options) }
+    return open()?.use { BitmapFactory.decodeStream(it, null, options) }
 }
 
 private fun readExifRotation(context: Context, uri: Uri): Int =

@@ -118,6 +118,7 @@ class ScannerStateTest {
         override val height = 100
         override fun toImageBitmap(): ImageBitmap? = null
         override suspend fun read(crop: IntRect?) = CameraScan(data = null, image = null)
+        override suspend fun readMrz(): PassportMrzData? = null
     }
 
     @Test

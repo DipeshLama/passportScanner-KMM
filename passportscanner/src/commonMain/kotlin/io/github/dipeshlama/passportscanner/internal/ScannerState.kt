@@ -118,6 +118,17 @@ internal class ScannerState(
         return finish(PassportScanResult.ImageOnly(image))
     }
 
+    /** Clears a finished or in-progress scan so the scanner starts scanning again. */
+    fun restart() {
+        isFinished = false
+        isProcessing = false
+        unreadableScan = null
+        reviewScan = null
+        expiredScan = null
+        cropImage = null
+        isTipsVisible = false
+    }
+
     fun showTips(visible: Boolean) {
         isTipsVisible = visible
     }

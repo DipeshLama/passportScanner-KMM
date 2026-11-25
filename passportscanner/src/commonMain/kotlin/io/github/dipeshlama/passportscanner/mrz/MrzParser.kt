@@ -23,6 +23,12 @@ public object MrzParser {
         find(ocrLines.map { OcrLine(it, Rect.Zero) })?.data
 
     /**
+     * Parses the MRZ from text with one OCR line per line, such as the two MRZ lines copied from a
+     * document or returned by a server-side OCR service. Returns null if no valid MRZ is found.
+     */
+    public fun parse(text: String): PassportMrzData? = parse(text.lines())
+
+    /**
      * Like [parse], but uses line positions to join lines that OCR split into fragments, and
      * returns where the MRZ is in the image.
      */

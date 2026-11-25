@@ -22,6 +22,7 @@ Kotlin Multiplatform / Compose Multiplatform scanners for **Android and iOS**, u
 - Flashlight button for dim rooms, and an optional check that rejects expired passports
 - ICAO 9303 TD3 MRZ parser that only accepts a result when every check digit validates, so a misread frame is rejected instead of returning wrong details
 - Camera permission handling, an optional review sheet and a tips sheet, with all text replaceable for localisation
+- A `PassportScannerState` with a Flow of scan events, and a headless `PassportImageScanner.scanImage(bytes)` for reading images without UI
 - OCR runs on the device: ML Kit on Android, Apple Vision on iOS. Nothing is sent over the network.
 
 **barcode-scanner**
@@ -240,12 +241,36 @@ PassportScanner(
 
 `PassportMrzData.toString()` (and so `PassportScanResult.Success.toString()`) prints `***` for every field. Read the properties (`data.documentNumber`, `data.surname`, …) when you need the values. Equality and `copy()` work as usual.
 
-### Parser only
+### State and events
+
+To observe or control the scanner from outside it, pass a `PassportScannerState` and collect its `events` Flow, or read `phase` and `result` as Compose state. The state also has `capture()`, `setTorch(on)` and `restart()`.
+
+```kotlin
+val scanner = rememberPassportScannerState()
+LaunchedEffect(scanner) {
+    scanner.events.collect { event ->
+        when (event) {
+            is PassportScanEvent.Completed -> onPassport(event.result)
+            PassportScanEvent.Cancelled -> navigateBack()
+            else -> Unit // Unreadable, Expired
+        }
+    }
+}
+PassportScanner(state = scanner, config = PassportScannerConfig(/* ... */))
+```
+
+### Without UI
+
+To read an MRZ from an image you already have (a file, a download, a batch job), call `PassportImageScanner.scanImage(bytes)` from any coroutine. It uses the same on-device OCR and returns `PassportMrzData?`.
+
+```kotlin
+val data: PassportMrzData? = PassportImageScanner.scanImage(jpegBytes)
+```
 
 If you already have OCR text, use the parser on its own:
 
 ```kotlin
-val data: PassportMrzData? = MrzParser.parse(listOf(line1, line2))
+val data: PassportMrzData? = MrzParser.parse(listOf(line1, line2)) // or MrzParser.parse(text)
 ```
 
 `MrzParser.find(List<OcrLine>)` does the same with line positions, which lets it rebuild MRZ lines that the OCR engine split into pieces.

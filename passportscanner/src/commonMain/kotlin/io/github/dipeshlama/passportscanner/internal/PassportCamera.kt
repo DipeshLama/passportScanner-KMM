@@ -94,7 +94,13 @@ internal interface PickedImage {
 
     /** Reads the MRZ from the photo, or from [crop] of it (in pixels) when given. */
     suspend fun read(crop: IntRect? = null): CameraScan
+
+    /** Reads only the MRZ from the whole photo, without encoding a JPEG. */
+    suspend fun readMrz(): PassportMrzData?
 }
+
+/** Decodes an encoded image (JPEG, PNG, HEIC…), upright and scaled down, or null if it can't be decoded. */
+internal expect fun decodePassportImage(bytes: ByteArray): PickedImage?
 
 /**
  * Returns a function that opens the system photo picker. [onLoading] is called once a photo is

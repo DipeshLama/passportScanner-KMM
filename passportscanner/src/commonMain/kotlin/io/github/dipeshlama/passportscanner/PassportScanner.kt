@@ -39,6 +39,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -73,13 +74,11 @@ import kotlinx.coroutines.launch
 import io.github.dipeshlama.passportscanner.internal.CameraScan
 import io.github.dipeshlama.passportscanner.internal.ExpiredSheet
 import io.github.dipeshlama.passportscanner.internal.ImageCropScreen
-import io.github.dipeshlama.passportscanner.internal.PassportCameraController
 import io.github.dipeshlama.passportscanner.internal.PassportCameraView
 import io.github.dipeshlama.passportscanner.internal.PickedImage
 import io.github.dipeshlama.passportscanner.internal.PreviewCrop
 import io.github.dipeshlama.passportscanner.internal.ReviewSheet
 import io.github.dipeshlama.passportscanner.internal.ScannerIcons
-import io.github.dipeshlama.passportscanner.internal.ScannerState
 import io.github.dipeshlama.passportscanner.internal.SheetStyle
 import io.github.dipeshlama.passportscanner.internal.TipsSheet
 import io.github.dipeshlama.passportscanner.internal.UnreadableSheet
@@ -99,6 +98,9 @@ private val ScanLineBandHeight = 47.dp
  *
  * [onResult] is called once when a scan is complete; remove the scanner from composition after
  * that. [onCancel] is called when the user goes back, from the top bar or with system back.
+ *
+ * To observe or control the scanner from outside, or to receive results as a [kotlinx.coroutines.flow.Flow],
+ * use the overload that takes a [PassportScannerState] instead.
  *
  * On iOS, add `NSCameraUsageDescription` to the app's Info.plist.
  *
@@ -129,22 +131,113 @@ public fun PassportScanner(
     captureButton: (@Composable (onClick: () -> Unit, enabled: Boolean) -> Unit)? = null,
     captureHint: (@Composable () -> Unit)? = null,
 ) {
-    val currentConfig by rememberUpdatedState(config)
+    val state = remember { PassportScannerState(emitsEvents = false) }
     val currentOnResult by rememberUpdatedState(onResult)
-    val state = remember { ScannerState(config = { currentConfig }) }
-    val deliver: (PassportScanResult?) -> Unit = { result -> result?.let(currentOnResult) }
+    PassportScannerContent(
+        state = state,
+        onResult = { currentOnResult(it) },
+        onCancel = onCancel,
+        modifier = modifier,
+        config = config,
+        strings = strings,
+        colors = colors,
+        sheetColors = sheetColors,
+        sheetTypography = sheetTypography,
+        title = title,
+        instruction = instruction,
+        galleryButton = galleryButton,
+        captureButton = captureButton,
+        captureHint = captureHint,
+    )
+}
 
+/**
+ * Full-screen passport scanner driven by a [PassportScannerState], the same scanner as the
+ * `PassportScanner(onResult, onCancel)` overload.
+ *
+ * Results and back presses are reported through [PassportScannerState.events] (and
+ * [PassportScannerState.result]), and the scanner can be controlled with
+ * [PassportScannerState.capture], [PassportScannerState.setTorch] and [PassportScannerState.restart].
+ * Collect [PassportScannerState.events] to handle [PassportScanEvent.Cancelled]; the scanner
+ * consumes system back while it's shown.
+ *
+ * After a result, the scanner stops in [PassportScanPhase.Finished]: remove it from composition,
+ * or call [PassportScannerState.restart] to scan another passport.
+ *
+ * The other parameters are the same as in the `PassportScanner(onResult, onCancel)` overload.
+ */
+@Composable
+public fun PassportScanner(
+    state: PassportScannerState,
+    modifier: Modifier = Modifier,
+    config: PassportScannerConfig = PassportScannerConfig(),
+    strings: PassportScannerStrings = PassportScannerStrings(),
+    colors: PassportScannerColors = PassportScannerDefaults.colors(),
+    sheetColors: PassportScannerSheetColors = PassportScannerDefaults.sheetColors(),
+    sheetTypography: PassportScannerSheetTypography = PassportScannerDefaults.sheetTypography(),
+    title: (@Composable () -> Unit)? = null,
+    instruction: (@Composable () -> Unit)? = null,
+    galleryButton: (@Composable (onClick: () -> Unit, enabled: Boolean) -> Unit)? = null,
+    captureButton: (@Composable (onClick: () -> Unit, enabled: Boolean) -> Unit)? = null,
+    captureHint: (@Composable () -> Unit)? = null,
+) {
+    PassportScannerContent(
+        state = state,
+        onResult = {},
+        onCancel = {},
+        modifier = modifier,
+        config = config,
+        strings = strings,
+        colors = colors,
+        sheetColors = sheetColors,
+        sheetTypography = sheetTypography,
+        title = title,
+        instruction = instruction,
+        galleryButton = galleryButton,
+        captureButton = captureButton,
+        captureHint = captureHint,
+    )
+}
+
+@Composable
+private fun PassportScannerContent(
+    state: PassportScannerState,
+    onResult: (PassportScanResult) -> Unit,
+    onCancel: () -> Unit,
+    modifier: Modifier,
+    config: PassportScannerConfig,
+    strings: PassportScannerStrings,
+    colors: PassportScannerColors,
+    sheetColors: PassportScannerSheetColors,
+    sheetTypography: PassportScannerSheetTypography,
+    title: (@Composable () -> Unit)?,
+    instruction: (@Composable () -> Unit)?,
+    galleryButton: (@Composable (onClick: () -> Unit, enabled: Boolean) -> Unit)?,
+    captureButton: (@Composable (onClick: () -> Unit, enabled: Boolean) -> Unit)?,
+    captureHint: (@Composable () -> Unit)?,
+) {
+    // Read lazily by the scan logic, like rememberUpdatedState.
+    state.config = config
+    val currentOnResult by rememberUpdatedState(onResult)
     val currentOnCancel by rememberUpdatedState(onCancel)
+    val deliver: (PassportScanResult?) -> Unit = { result -> result?.let(currentOnResult) }
+    val cancel: () -> Unit = {
+        state.onCancelled()
+        currentOnCancel()
+    }
+    val scanner = state.scanner
+
     NavigationBackHandler(
         state = rememberNavigationEventState(NavigationEventInfo.None),
         // The crop screen handles back itself, to return to the camera.
-        isBackEnabled = !state.isFinished && state.cropImage == null,
-        onBackCompleted = { currentOnCancel() }
+        isBackEnabled = !scanner.isFinished && scanner.cropImage == null,
+        onBackCompleted = cancel
     )
 
-    val cameraController = remember { PassportCameraController() }
+    val cameraController = state.camera
     val cameraPermission = rememberCameraPermission()
     val isCameraGranted = cameraPermission.isGranted
+    SideEffect { state.isCameraGranted = isCameraGranted }
 
     LaunchedEffect(Unit) {
         if (!cameraPermission.isGranted) cameraPermission.request()
@@ -155,12 +248,12 @@ public fun PassportScanner(
         scope.launch { deliver(state.onScan(image.read(crop))) }
     }
     val launchGallery = rememberPassportGalleryPicker(
-        onLoading = state::onProcessingStarted,
+        onLoading = scanner::onProcessingStarted,
         onPicked = { image ->
             if (image == null) {
-                state.onGalleryCancelled()
+                scanner.onGalleryCancelled()
             } else {
-                state.onGalleryPicked(image)?.let { readPicked(it, null) }
+                scanner.onGalleryPicked(image)?.let { readPicked(it, null) }
             }
         }
     )
@@ -185,9 +278,9 @@ public fun PassportScanner(
         if (isCameraGranted) {
             PassportCameraView(
                 controller = cameraController,
-                isAutoScanEnabled = state.isAutoScanEnabled,
+                isAutoScanEnabled = scanner.isAutoScanEnabled,
                 crop = previewCrop,
-                onCaptureStarted = state::onProcessingStarted,
+                onCaptureStarted = scanner::onProcessingStarted,
                 onResult = { scan: CameraScan -> deliver(state.onScan(scan)) },
                 modifier = Modifier.fillMaxSize()
             )
@@ -204,7 +297,7 @@ public fun PassportScanner(
             ) {
                 ScannerTopBar(
                     backDescription = strings.back,
-                    onBack = onCancel,
+                    onBack = cancel,
                     action = {
                         if (config.showTorch && isCameraGranted && cameraController.hasTorch) {
                             val isOn = cameraController.isTorchOn
@@ -235,7 +328,7 @@ public fun PassportScanner(
                     }
 
                     ScanFrame(
-                        isScanning = isCameraGranted && state.isAutoScanEnabled,
+                        isScanning = isCameraGranted && scanner.isAutoScanEnabled,
                         scanLineColor = colors.scanLine,
                         cornerColor = colors.frameCorners,
                         modifier = Modifier
@@ -259,7 +352,7 @@ public fun PassportScanner(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         if (config.allowGallery) {
-                            val galleryEnabled = !state.isProcessing && !state.isFinished
+                            val galleryEnabled = !scanner.isProcessing && !scanner.isFinished
                             if (galleryButton != null) {
                                 galleryButton(launchGallery, galleryEnabled)
                             } else {
@@ -274,14 +367,14 @@ public fun PassportScanner(
                             Spacer(Modifier)
                         }
                         if (config.showTips) {
-                            IconButton(onClick = { state.showTips(true) }) {
+                            IconButton(onClick = { scanner.showTips(true) }) {
                                 Icon(ScannerIcons.Info, contentDescription = strings.tips)
                             }
                         }
                     }
                 }
 
-                val captureEnabled = isCameraGranted && !state.isProcessing && !state.isFinished
+                val captureEnabled = isCameraGranted && !scanner.isProcessing && !scanner.isFinished
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -303,17 +396,17 @@ public fun PassportScanner(
             }
         }
 
-        state.cropImage?.let { image ->
+        scanner.cropImage?.let { image ->
             ImageCropScreen(
                 image = image,
                 strings = strings,
                 colors = colors,
-                onCancel = state::cancelCrop,
-                onConfirm = { crop -> state.confirmCrop()?.let { readPicked(it, crop) } }
+                onCancel = scanner::cancelCrop,
+                onConfirm = { crop -> scanner.confirmCrop()?.let { readPicked(it, crop) } }
             )
         }
 
-        if (state.isProcessing) {
+        if (scanner.isProcessing) {
             ProcessingOverlay(text = strings.processing, colors = colors)
         }
     }
@@ -321,35 +414,35 @@ public fun PassportScanner(
     val sheetStyle = remember(sheetColors, sheetTypography) { SheetStyle(sheetColors, sheetTypography) }
 
     UnreadableSheet(
-        scan = state.unreadableScan,
+        scan = scanner.unreadableScan,
         strings = strings,
         style = sheetStyle,
         allowImageOnly = config.allowImageOnlyResult,
-        onRetry = state::retry,
-        onUsePhoto = { deliver(state.useUnreadablePhoto()) }
+        onRetry = scanner::retry,
+        onUsePhoto = { deliver(state.complete(scanner.useUnreadablePhoto())) }
     )
 
     ExpiredSheet(
-        scan = state.expiredScan,
+        scan = scanner.expiredScan,
         strings = strings,
         style = sheetStyle,
-        onScanAnother = state::dismissExpired
+        onScanAnother = scanner::dismissExpired
     )
 
     ReviewSheet(
-        data = state.reviewScan?.data,
+        data = scanner.reviewScan?.data,
         strings = strings,
         style = sheetStyle,
-        onRescan = state::rescan,
-        onConfirm = { deliver(state.confirmReview()) }
+        onRescan = scanner::rescan,
+        onConfirm = { deliver(state.complete(scanner.confirmReview())) }
     )
 
     if (config.showTips) {
         TipsSheet(
-            isVisible = state.isTipsVisible,
+            isVisible = scanner.isTipsVisible,
             strings = strings,
             style = sheetStyle,
-            onDismiss = { state.showTips(false) }
+            onDismiss = { scanner.showTips(false) }
         )
     }
 }

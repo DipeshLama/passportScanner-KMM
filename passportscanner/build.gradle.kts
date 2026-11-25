@@ -9,7 +9,7 @@ plugins {
 }
 
 group = "io.github.dipeshlama"
-version = "1.1.0"
+version = "1.2.0"
 
 kotlin {
     explicitApi()
@@ -54,6 +54,7 @@ kotlin {
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
+            implementation(libs.kotlinx.coroutines.test)
         }
     }
 }

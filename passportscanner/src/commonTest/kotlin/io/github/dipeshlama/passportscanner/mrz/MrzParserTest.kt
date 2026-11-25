@@ -25,6 +25,14 @@ class MrzParserTest {
     }
 
     @Test
+    fun parsesMultilineText() {
+        val data = assertNotNull(MrzParser.parse("$line1\n$line2\n"))
+        assertEquals("L898902C3", data.documentNumber)
+        assertEquals("ANNA MARIA", data.givenNames)
+        assertNull(MrzParser.parse("not an mrz"))
+    }
+
+    @Test
     fun ignoresSurroundingTextAndOcrNoise() {
         val ocr = listOf(
             "PASSPORT",
