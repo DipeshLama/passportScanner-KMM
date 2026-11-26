@@ -39,6 +39,76 @@ final enum class io.github.dipeshlama.barcodescanner/BarcodeFormat : kotlin/Enum
     }
 }
 
+final enum class io.github.dipeshlama.barcodescanner/BarcodeScanPhase : kotlin/Enum<io.github.dipeshlama.barcodescanner/BarcodeScanPhase> { // io.github.dipeshlama.barcodescanner/BarcodeScanPhase|null[0]
+    enum entry Cropping // io.github.dipeshlama.barcodescanner/BarcodeScanPhase.Cropping|null[0]
+    enum entry Finished // io.github.dipeshlama.barcodescanner/BarcodeScanPhase.Finished|null[0]
+    enum entry Paused // io.github.dipeshlama.barcodescanner/BarcodeScanPhase.Paused|null[0]
+    enum entry Processing // io.github.dipeshlama.barcodescanner/BarcodeScanPhase.Processing|null[0]
+    enum entry Scanning // io.github.dipeshlama.barcodescanner/BarcodeScanPhase.Scanning|null[0]
+
+    final val entries // io.github.dipeshlama.barcodescanner/BarcodeScanPhase.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.github.dipeshlama.barcodescanner/BarcodeScanPhase> // io.github.dipeshlama.barcodescanner/BarcodeScanPhase.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.github.dipeshlama.barcodescanner/BarcodeScanPhase // io.github.dipeshlama.barcodescanner/BarcodeScanPhase.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.github.dipeshlama.barcodescanner/BarcodeScanPhase> // io.github.dipeshlama.barcodescanner/BarcodeScanPhase.values|values#static(){}[0]
+}
+
+sealed interface io.github.dipeshlama.barcodescanner/BarcodeScanEvent { // io.github.dipeshlama.barcodescanner/BarcodeScanEvent|null[0]
+    final class Done : io.github.dipeshlama.barcodescanner/BarcodeScanEvent { // io.github.dipeshlama.barcodescanner/BarcodeScanEvent.Done|null[0]
+        constructor <init>(kotlin.collections/List<io.github.dipeshlama.barcodescanner/BarcodeScanResult>) // io.github.dipeshlama.barcodescanner/BarcodeScanEvent.Done.<init>|<init>(kotlin.collections.List<io.github.dipeshlama.barcodescanner.BarcodeScanResult>){}[0]
+
+        final val results // io.github.dipeshlama.barcodescanner/BarcodeScanEvent.Done.results|{}results[0]
+            final fun <get-results>(): kotlin.collections/List<io.github.dipeshlama.barcodescanner/BarcodeScanResult> // io.github.dipeshlama.barcodescanner/BarcodeScanEvent.Done.results.<get-results>|<get-results>(){}[0]
+
+        final fun toString(): kotlin/String // io.github.dipeshlama.barcodescanner/BarcodeScanEvent.Done.toString|toString(){}[0]
+    }
+
+    final class Scanned : io.github.dipeshlama.barcodescanner/BarcodeScanEvent { // io.github.dipeshlama.barcodescanner/BarcodeScanEvent.Scanned|null[0]
+        constructor <init>(io.github.dipeshlama.barcodescanner/BarcodeScanResult) // io.github.dipeshlama.barcodescanner/BarcodeScanEvent.Scanned.<init>|<init>(io.github.dipeshlama.barcodescanner.BarcodeScanResult){}[0]
+
+        final val result // io.github.dipeshlama.barcodescanner/BarcodeScanEvent.Scanned.result|{}result[0]
+            final fun <get-result>(): io.github.dipeshlama.barcodescanner/BarcodeScanResult // io.github.dipeshlama.barcodescanner/BarcodeScanEvent.Scanned.result.<get-result>|<get-result>(){}[0]
+
+        final fun toString(): kotlin/String // io.github.dipeshlama.barcodescanner/BarcodeScanEvent.Scanned.toString|toString(){}[0]
+    }
+
+    final object Cancelled : io.github.dipeshlama.barcodescanner/BarcodeScanEvent { // io.github.dipeshlama.barcodescanner/BarcodeScanEvent.Cancelled|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.github.dipeshlama.barcodescanner/BarcodeScanEvent.Cancelled.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.github.dipeshlama.barcodescanner/BarcodeScanEvent.Cancelled.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.github.dipeshlama.barcodescanner/BarcodeScanEvent.Cancelled.toString|toString(){}[0]
+    }
+
+    final object NoCodeFound : io.github.dipeshlama.barcodescanner/BarcodeScanEvent { // io.github.dipeshlama.barcodescanner/BarcodeScanEvent.NoCodeFound|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.github.dipeshlama.barcodescanner/BarcodeScanEvent.NoCodeFound.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.github.dipeshlama.barcodescanner/BarcodeScanEvent.NoCodeFound.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.github.dipeshlama.barcodescanner/BarcodeScanEvent.NoCodeFound.toString|toString(){}[0]
+    }
+}
+
+sealed interface io.github.dipeshlama.barcodescanner/BarcodeScanMode { // io.github.dipeshlama.barcodescanner/BarcodeScanMode|null[0]
+    final class Continuous : io.github.dipeshlama.barcodescanner/BarcodeScanMode { // io.github.dipeshlama.barcodescanner/BarcodeScanMode.Continuous|null[0]
+        constructor <init>(kotlin/Long = ..., kotlin/Boolean = ...) // io.github.dipeshlama.barcodescanner/BarcodeScanMode.Continuous.<init>|<init>(kotlin.Long;kotlin.Boolean){}[0]
+
+        final val delayMillis // io.github.dipeshlama.barcodescanner/BarcodeScanMode.Continuous.delayMillis|{}delayMillis[0]
+            final fun <get-delayMillis>(): kotlin/Long // io.github.dipeshlama.barcodescanner/BarcodeScanMode.Continuous.delayMillis.<get-delayMillis>|<get-delayMillis>(){}[0]
+        final val skipDuplicates // io.github.dipeshlama.barcodescanner/BarcodeScanMode.Continuous.skipDuplicates|{}skipDuplicates[0]
+            final fun <get-skipDuplicates>(): kotlin/Boolean // io.github.dipeshlama.barcodescanner/BarcodeScanMode.Continuous.skipDuplicates.<get-skipDuplicates>|<get-skipDuplicates>(){}[0]
+
+        final fun component1(): kotlin/Long // io.github.dipeshlama.barcodescanner/BarcodeScanMode.Continuous.component1|component1(){}[0]
+        final fun component2(): kotlin/Boolean // io.github.dipeshlama.barcodescanner/BarcodeScanMode.Continuous.component2|component2(){}[0]
+        final fun copy(kotlin/Long = ..., kotlin/Boolean = ...): io.github.dipeshlama.barcodescanner/BarcodeScanMode.Continuous // io.github.dipeshlama.barcodescanner/BarcodeScanMode.Continuous.copy|copy(kotlin.Long;kotlin.Boolean){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.github.dipeshlama.barcodescanner/BarcodeScanMode.Continuous.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.github.dipeshlama.barcodescanner/BarcodeScanMode.Continuous.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.github.dipeshlama.barcodescanner/BarcodeScanMode.Continuous.toString|toString(){}[0]
+    }
+
+    final object Single : io.github.dipeshlama.barcodescanner/BarcodeScanMode { // io.github.dipeshlama.barcodescanner/BarcodeScanMode.Single|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.github.dipeshlama.barcodescanner/BarcodeScanMode.Single.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.github.dipeshlama.barcodescanner/BarcodeScanMode.Single.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.github.dipeshlama.barcodescanner/BarcodeScanMode.Single.toString|toString(){}[0]
+    }
+}
+
 final class io.github.dipeshlama.barcodescanner/BarcodeScanResult { // io.github.dipeshlama.barcodescanner/BarcodeScanResult|null[0]
     constructor <init>(kotlin/String, io.github.dipeshlama.barcodescanner/BarcodeFormat) // io.github.dipeshlama.barcodescanner/BarcodeScanResult.<init>|<init>(kotlin.String;io.github.dipeshlama.barcodescanner.BarcodeFormat){}[0]
 
@@ -83,10 +153,14 @@ final class io.github.dipeshlama.barcodescanner/BarcodeScannerColors { // io.git
 }
 
 final class io.github.dipeshlama.barcodescanner/BarcodeScannerConfig { // io.github.dipeshlama.barcodescanner/BarcodeScannerConfig|null[0]
-    constructor <init>(kotlin.collections/Set<io.github.dipeshlama.barcodescanner/BarcodeFormat> = ..., kotlin/Float = ..., kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin/Boolean = ...) // io.github.dipeshlama.barcodescanner/BarcodeScannerConfig.<init>|<init>(kotlin.collections.Set<io.github.dipeshlama.barcodescanner.BarcodeFormat>;kotlin.Float;kotlin.Boolean;kotlin.Boolean;kotlin.Boolean;kotlin.Boolean){}[0]
+    constructor <init>(kotlin.collections/Set<io.github.dipeshlama.barcodescanner/BarcodeFormat> = ..., kotlin/Float = ..., kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin/Boolean = ..., io.github.dipeshlama.barcodescanner/BarcodeScanMode = ..., kotlin/Boolean = ..., kotlin/Boolean = ...) // io.github.dipeshlama.barcodescanner/BarcodeScannerConfig.<init>|<init>(kotlin.collections.Set<io.github.dipeshlama.barcodescanner.BarcodeFormat>;kotlin.Float;kotlin.Boolean;kotlin.Boolean;kotlin.Boolean;kotlin.Boolean;kotlin.Boolean;io.github.dipeshlama.barcodescanner.BarcodeScanMode;kotlin.Boolean;kotlin.Boolean){}[0]
 
     final val allowGallery // io.github.dipeshlama.barcodescanner/BarcodeScannerConfig.allowGallery|{}allowGallery[0]
         final fun <get-allowGallery>(): kotlin/Boolean // io.github.dipeshlama.barcodescanner/BarcodeScannerConfig.allowGallery.<get-allowGallery>|<get-allowGallery>(){}[0]
+    final val autoZoom // io.github.dipeshlama.barcodescanner/BarcodeScannerConfig.autoZoom|{}autoZoom[0]
+        final fun <get-autoZoom>(): kotlin/Boolean // io.github.dipeshlama.barcodescanner/BarcodeScannerConfig.autoZoom.<get-autoZoom>|<get-autoZoom>(){}[0]
+    final val beepOnScan // io.github.dipeshlama.barcodescanner/BarcodeScannerConfig.beepOnScan|{}beepOnScan[0]
+        final fun <get-beepOnScan>(): kotlin/Boolean // io.github.dipeshlama.barcodescanner/BarcodeScannerConfig.beepOnScan.<get-beepOnScan>|<get-beepOnScan>(){}[0]
     final val cropGalleryImage // io.github.dipeshlama.barcodescanner/BarcodeScannerConfig.cropGalleryImage|{}cropGalleryImage[0]
         final fun <get-cropGalleryImage>(): kotlin/Boolean // io.github.dipeshlama.barcodescanner/BarcodeScannerConfig.cropGalleryImage.<get-cropGalleryImage>|<get-cropGalleryImage>(){}[0]
     final val formats // io.github.dipeshlama.barcodescanner/BarcodeScannerConfig.formats|{}formats[0]
@@ -95,23 +169,61 @@ final class io.github.dipeshlama.barcodescanner/BarcodeScannerConfig { // io.git
         final fun <get-frameAspectRatio>(): kotlin/Float // io.github.dipeshlama.barcodescanner/BarcodeScannerConfig.frameAspectRatio.<get-frameAspectRatio>|<get-frameAspectRatio>(){}[0]
     final val hapticFeedback // io.github.dipeshlama.barcodescanner/BarcodeScannerConfig.hapticFeedback|{}hapticFeedback[0]
         final fun <get-hapticFeedback>(): kotlin/Boolean // io.github.dipeshlama.barcodescanner/BarcodeScannerConfig.hapticFeedback.<get-hapticFeedback>|<get-hapticFeedback>(){}[0]
+    final val pinchToZoom // io.github.dipeshlama.barcodescanner/BarcodeScannerConfig.pinchToZoom|{}pinchToZoom[0]
+        final fun <get-pinchToZoom>(): kotlin/Boolean // io.github.dipeshlama.barcodescanner/BarcodeScannerConfig.pinchToZoom.<get-pinchToZoom>|<get-pinchToZoom>(){}[0]
+    final val scanMode // io.github.dipeshlama.barcodescanner/BarcodeScannerConfig.scanMode|{}scanMode[0]
+        final fun <get-scanMode>(): io.github.dipeshlama.barcodescanner/BarcodeScanMode // io.github.dipeshlama.barcodescanner/BarcodeScannerConfig.scanMode.<get-scanMode>|<get-scanMode>(){}[0]
     final val showTorch // io.github.dipeshlama.barcodescanner/BarcodeScannerConfig.showTorch|{}showTorch[0]
         final fun <get-showTorch>(): kotlin/Boolean // io.github.dipeshlama.barcodescanner/BarcodeScannerConfig.showTorch.<get-showTorch>|<get-showTorch>(){}[0]
 
     final fun component1(): kotlin.collections/Set<io.github.dipeshlama.barcodescanner/BarcodeFormat> // io.github.dipeshlama.barcodescanner/BarcodeScannerConfig.component1|component1(){}[0]
+    final fun component10(): kotlin/Boolean // io.github.dipeshlama.barcodescanner/BarcodeScannerConfig.component10|component10(){}[0]
     final fun component2(): kotlin/Float // io.github.dipeshlama.barcodescanner/BarcodeScannerConfig.component2|component2(){}[0]
     final fun component3(): kotlin/Boolean // io.github.dipeshlama.barcodescanner/BarcodeScannerConfig.component3|component3(){}[0]
     final fun component4(): kotlin/Boolean // io.github.dipeshlama.barcodescanner/BarcodeScannerConfig.component4|component4(){}[0]
     final fun component5(): kotlin/Boolean // io.github.dipeshlama.barcodescanner/BarcodeScannerConfig.component5|component5(){}[0]
     final fun component6(): kotlin/Boolean // io.github.dipeshlama.barcodescanner/BarcodeScannerConfig.component6|component6(){}[0]
-    final fun copy(kotlin.collections/Set<io.github.dipeshlama.barcodescanner/BarcodeFormat> = ..., kotlin/Float = ..., kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin/Boolean = ...): io.github.dipeshlama.barcodescanner/BarcodeScannerConfig // io.github.dipeshlama.barcodescanner/BarcodeScannerConfig.copy|copy(kotlin.collections.Set<io.github.dipeshlama.barcodescanner.BarcodeFormat>;kotlin.Float;kotlin.Boolean;kotlin.Boolean;kotlin.Boolean;kotlin.Boolean){}[0]
+    final fun component7(): kotlin/Boolean // io.github.dipeshlama.barcodescanner/BarcodeScannerConfig.component7|component7(){}[0]
+    final fun component8(): io.github.dipeshlama.barcodescanner/BarcodeScanMode // io.github.dipeshlama.barcodescanner/BarcodeScannerConfig.component8|component8(){}[0]
+    final fun component9(): kotlin/Boolean // io.github.dipeshlama.barcodescanner/BarcodeScannerConfig.component9|component9(){}[0]
+    final fun copy(kotlin.collections/Set<io.github.dipeshlama.barcodescanner/BarcodeFormat> = ..., kotlin/Float = ..., kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin/Boolean = ..., io.github.dipeshlama.barcodescanner/BarcodeScanMode = ..., kotlin/Boolean = ..., kotlin/Boolean = ...): io.github.dipeshlama.barcodescanner/BarcodeScannerConfig // io.github.dipeshlama.barcodescanner/BarcodeScannerConfig.copy|copy(kotlin.collections.Set<io.github.dipeshlama.barcodescanner.BarcodeFormat>;kotlin.Float;kotlin.Boolean;kotlin.Boolean;kotlin.Boolean;kotlin.Boolean;kotlin.Boolean;io.github.dipeshlama.barcodescanner.BarcodeScanMode;kotlin.Boolean;kotlin.Boolean){}[0]
     final fun equals(kotlin/Any?): kotlin/Boolean // io.github.dipeshlama.barcodescanner/BarcodeScannerConfig.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // io.github.dipeshlama.barcodescanner/BarcodeScannerConfig.hashCode|hashCode(){}[0]
     final fun toString(): kotlin/String // io.github.dipeshlama.barcodescanner/BarcodeScannerConfig.toString|toString(){}[0]
 }
 
+final class io.github.dipeshlama.barcodescanner/BarcodeScannerState { // io.github.dipeshlama.barcodescanner/BarcodeScannerState|null[0]
+    final val events // io.github.dipeshlama.barcodescanner/BarcodeScannerState.events|{}events[0]
+        final fun <get-events>(): kotlinx.coroutines.flow/Flow<io.github.dipeshlama.barcodescanner/BarcodeScanEvent> // io.github.dipeshlama.barcodescanner/BarcodeScannerState.events.<get-events>|<get-events>(){}[0]
+    final val hasTorch // io.github.dipeshlama.barcodescanner/BarcodeScannerState.hasTorch|{}hasTorch[0]
+        final fun <get-hasTorch>(): kotlin/Boolean // io.github.dipeshlama.barcodescanner/BarcodeScannerState.hasTorch.<get-hasTorch>|<get-hasTorch>(){}[0]
+    final val isPaused // io.github.dipeshlama.barcodescanner/BarcodeScannerState.isPaused|{}isPaused[0]
+        final fun <get-isPaused>(): kotlin/Boolean // io.github.dipeshlama.barcodescanner/BarcodeScannerState.isPaused.<get-isPaused>|<get-isPaused>(){}[0]
+    final val isTorchOn // io.github.dipeshlama.barcodescanner/BarcodeScannerState.isTorchOn|{}isTorchOn[0]
+        final fun <get-isTorchOn>(): kotlin/Boolean // io.github.dipeshlama.barcodescanner/BarcodeScannerState.isTorchOn.<get-isTorchOn>|<get-isTorchOn>(){}[0]
+    final val maxZoomRatio // io.github.dipeshlama.barcodescanner/BarcodeScannerState.maxZoomRatio|{}maxZoomRatio[0]
+        final fun <get-maxZoomRatio>(): kotlin/Float // io.github.dipeshlama.barcodescanner/BarcodeScannerState.maxZoomRatio.<get-maxZoomRatio>|<get-maxZoomRatio>(){}[0]
+    final val minZoomRatio // io.github.dipeshlama.barcodescanner/BarcodeScannerState.minZoomRatio|{}minZoomRatio[0]
+        final fun <get-minZoomRatio>(): kotlin/Float // io.github.dipeshlama.barcodescanner/BarcodeScannerState.minZoomRatio.<get-minZoomRatio>|<get-minZoomRatio>(){}[0]
+    final val phase // io.github.dipeshlama.barcodescanner/BarcodeScannerState.phase|{}phase[0]
+        final fun <get-phase>(): io.github.dipeshlama.barcodescanner/BarcodeScanPhase // io.github.dipeshlama.barcodescanner/BarcodeScannerState.phase.<get-phase>|<get-phase>(){}[0]
+    final val result // io.github.dipeshlama.barcodescanner/BarcodeScannerState.result|{}result[0]
+        final fun <get-result>(): io.github.dipeshlama.barcodescanner/BarcodeScanResult? // io.github.dipeshlama.barcodescanner/BarcodeScannerState.result.<get-result>|<get-result>(){}[0]
+    final val results // io.github.dipeshlama.barcodescanner/BarcodeScannerState.results|{}results[0]
+        final fun <get-results>(): kotlin.collections/List<io.github.dipeshlama.barcodescanner/BarcodeScanResult> // io.github.dipeshlama.barcodescanner/BarcodeScannerState.results.<get-results>|<get-results>(){}[0]
+    final val zoomRatio // io.github.dipeshlama.barcodescanner/BarcodeScannerState.zoomRatio|{}zoomRatio[0]
+        final fun <get-zoomRatio>(): kotlin/Float // io.github.dipeshlama.barcodescanner/BarcodeScannerState.zoomRatio.<get-zoomRatio>|<get-zoomRatio>(){}[0]
+
+    final fun finish() // io.github.dipeshlama.barcodescanner/BarcodeScannerState.finish|finish(){}[0]
+    final fun pause() // io.github.dipeshlama.barcodescanner/BarcodeScannerState.pause|pause(){}[0]
+    final fun restart() // io.github.dipeshlama.barcodescanner/BarcodeScannerState.restart|restart(){}[0]
+    final fun resume() // io.github.dipeshlama.barcodescanner/BarcodeScannerState.resume|resume(){}[0]
+    final fun setTorch(kotlin/Boolean) // io.github.dipeshlama.barcodescanner/BarcodeScannerState.setTorch|setTorch(kotlin.Boolean){}[0]
+    final fun setZoomRatio(kotlin/Float) // io.github.dipeshlama.barcodescanner/BarcodeScannerState.setZoomRatio|setZoomRatio(kotlin.Float){}[0]
+}
+
 final class io.github.dipeshlama.barcodescanner/BarcodeScannerStrings { // io.github.dipeshlama.barcodescanner/BarcodeScannerStrings|null[0]
-    constructor <init>(kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ...) // io.github.dipeshlama.barcodescanner/BarcodeScannerStrings.<init>|<init>(kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String){}[0]
+    constructor <init>(kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ...) // io.github.dipeshlama.barcodescanner/BarcodeScannerStrings.<init>|<init>(kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String){}[0]
 
     final val allowCamera // io.github.dipeshlama.barcodescanner/BarcodeScannerStrings.allowCamera|{}allowCamera[0]
         final fun <get-allowCamera>(): kotlin/String // io.github.dipeshlama.barcodescanner/BarcodeScannerStrings.allowCamera.<get-allowCamera>|<get-allowCamera>(){}[0]
@@ -127,6 +239,8 @@ final class io.github.dipeshlama.barcodescanner/BarcodeScannerStrings { // io.gi
         final fun <get-cropReset>(): kotlin/String // io.github.dipeshlama.barcodescanner/BarcodeScannerStrings.cropReset.<get-cropReset>|<get-cropReset>(){}[0]
     final val cropTitle // io.github.dipeshlama.barcodescanner/BarcodeScannerStrings.cropTitle|{}cropTitle[0]
         final fun <get-cropTitle>(): kotlin/String // io.github.dipeshlama.barcodescanner/BarcodeScannerStrings.cropTitle.<get-cropTitle>|<get-cropTitle>(){}[0]
+    final val done // io.github.dipeshlama.barcodescanner/BarcodeScannerStrings.done|{}done[0]
+        final fun <get-done>(): kotlin/String // io.github.dipeshlama.barcodescanner/BarcodeScannerStrings.done.<get-done>|<get-done>(){}[0]
     final val gallery // io.github.dipeshlama.barcodescanner/BarcodeScannerStrings.gallery|{}gallery[0]
         final fun <get-gallery>(): kotlin/String // io.github.dipeshlama.barcodescanner/BarcodeScannerStrings.gallery.<get-gallery>|<get-gallery>(){}[0]
     final val instruction // io.github.dipeshlama.barcodescanner/BarcodeScannerStrings.instruction|{}instruction[0]
@@ -151,6 +265,7 @@ final class io.github.dipeshlama.barcodescanner/BarcodeScannerStrings { // io.gi
     final fun component13(): kotlin/String // io.github.dipeshlama.barcodescanner/BarcodeScannerStrings.component13|component13(){}[0]
     final fun component14(): kotlin/String // io.github.dipeshlama.barcodescanner/BarcodeScannerStrings.component14|component14(){}[0]
     final fun component15(): kotlin/String // io.github.dipeshlama.barcodescanner/BarcodeScannerStrings.component15|component15(){}[0]
+    final fun component16(): kotlin/String // io.github.dipeshlama.barcodescanner/BarcodeScannerStrings.component16|component16(){}[0]
     final fun component2(): kotlin/String // io.github.dipeshlama.barcodescanner/BarcodeScannerStrings.component2|component2(){}[0]
     final fun component3(): kotlin/String // io.github.dipeshlama.barcodescanner/BarcodeScannerStrings.component3|component3(){}[0]
     final fun component4(): kotlin/String // io.github.dipeshlama.barcodescanner/BarcodeScannerStrings.component4|component4(){}[0]
@@ -159,10 +274,14 @@ final class io.github.dipeshlama.barcodescanner/BarcodeScannerStrings { // io.gi
     final fun component7(): kotlin/String // io.github.dipeshlama.barcodescanner/BarcodeScannerStrings.component7|component7(){}[0]
     final fun component8(): kotlin/String // io.github.dipeshlama.barcodescanner/BarcodeScannerStrings.component8|component8(){}[0]
     final fun component9(): kotlin/String // io.github.dipeshlama.barcodescanner/BarcodeScannerStrings.component9|component9(){}[0]
-    final fun copy(kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ...): io.github.dipeshlama.barcodescanner/BarcodeScannerStrings // io.github.dipeshlama.barcodescanner/BarcodeScannerStrings.copy|copy(kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String){}[0]
+    final fun copy(kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ...): io.github.dipeshlama.barcodescanner/BarcodeScannerStrings // io.github.dipeshlama.barcodescanner/BarcodeScannerStrings.copy|copy(kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.String){}[0]
     final fun equals(kotlin/Any?): kotlin/Boolean // io.github.dipeshlama.barcodescanner/BarcodeScannerStrings.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // io.github.dipeshlama.barcodescanner/BarcodeScannerStrings.hashCode|hashCode(){}[0]
     final fun toString(): kotlin/String // io.github.dipeshlama.barcodescanner/BarcodeScannerStrings.toString|toString(){}[0]
+}
+
+final object io.github.dipeshlama.barcodescanner/BarcodeImageScanner { // io.github.dipeshlama.barcodescanner/BarcodeImageScanner|null[0]
+    final suspend fun scanImage(kotlin/ByteArray, kotlin.collections/Set<io.github.dipeshlama.barcodescanner/BarcodeFormat> = ...): io.github.dipeshlama.barcodescanner/BarcodeScanResult? // io.github.dipeshlama.barcodescanner/BarcodeImageScanner.scanImage|scanImage(kotlin.ByteArray;kotlin.collections.Set<io.github.dipeshlama.barcodescanner.BarcodeFormat>){}[0]
 }
 
 final object io.github.dipeshlama.barcodescanner/BarcodeScannerDefaults { // io.github.dipeshlama.barcodescanner/BarcodeScannerDefaults|null[0]
@@ -172,15 +291,34 @@ final object io.github.dipeshlama.barcodescanner/BarcodeScannerDefaults { // io.
     final fun colors(androidx.compose.ui.graphics/Color, androidx.compose.ui.graphics/Color, androidx.compose.ui.graphics/Color, androidx.compose.ui.graphics/Color, androidx.compose.ui.graphics/Color, androidx.compose.ui.graphics/Color, androidx.compose.ui.graphics/Color, androidx.compose.ui.graphics/Color, androidx.compose.ui.graphics/Color, androidx.compose.ui.graphics/Color, androidx.compose.ui.graphics/Color, androidx.compose.runtime/Composer?, kotlin/Int, kotlin/Int, kotlin/Int): io.github.dipeshlama.barcodescanner/BarcodeScannerColors // io.github.dipeshlama.barcodescanner/BarcodeScannerDefaults.colors|colors(androidx.compose.ui.graphics.Color;androidx.compose.ui.graphics.Color;androidx.compose.ui.graphics.Color;androidx.compose.ui.graphics.Color;androidx.compose.ui.graphics.Color;androidx.compose.ui.graphics.Color;androidx.compose.ui.graphics.Color;androidx.compose.ui.graphics.Color;androidx.compose.ui.graphics.Color;androidx.compose.ui.graphics.Color;androidx.compose.ui.graphics.Color;androidx.compose.runtime.Composer?;kotlin.Int;kotlin.Int;kotlin.Int){}[0]
 }
 
+final val io.github.dipeshlama.barcodescanner/io_github_dipeshlama_barcodescanner_BarcodeImageScanner$stableprop // io.github.dipeshlama.barcodescanner/io_github_dipeshlama_barcodescanner_BarcodeImageScanner$stableprop|#static{}io_github_dipeshlama_barcodescanner_BarcodeImageScanner$stableprop[0]
+final val io.github.dipeshlama.barcodescanner/io_github_dipeshlama_barcodescanner_BarcodeScanEvent_Cancelled$stableprop // io.github.dipeshlama.barcodescanner/io_github_dipeshlama_barcodescanner_BarcodeScanEvent_Cancelled$stableprop|#static{}io_github_dipeshlama_barcodescanner_BarcodeScanEvent_Cancelled$stableprop[0]
+final val io.github.dipeshlama.barcodescanner/io_github_dipeshlama_barcodescanner_BarcodeScanEvent_Done$stableprop // io.github.dipeshlama.barcodescanner/io_github_dipeshlama_barcodescanner_BarcodeScanEvent_Done$stableprop|#static{}io_github_dipeshlama_barcodescanner_BarcodeScanEvent_Done$stableprop[0]
+final val io.github.dipeshlama.barcodescanner/io_github_dipeshlama_barcodescanner_BarcodeScanEvent_NoCodeFound$stableprop // io.github.dipeshlama.barcodescanner/io_github_dipeshlama_barcodescanner_BarcodeScanEvent_NoCodeFound$stableprop|#static{}io_github_dipeshlama_barcodescanner_BarcodeScanEvent_NoCodeFound$stableprop[0]
+final val io.github.dipeshlama.barcodescanner/io_github_dipeshlama_barcodescanner_BarcodeScanEvent_Scanned$stableprop // io.github.dipeshlama.barcodescanner/io_github_dipeshlama_barcodescanner_BarcodeScanEvent_Scanned$stableprop|#static{}io_github_dipeshlama_barcodescanner_BarcodeScanEvent_Scanned$stableprop[0]
+final val io.github.dipeshlama.barcodescanner/io_github_dipeshlama_barcodescanner_BarcodeScanMode_Continuous$stableprop // io.github.dipeshlama.barcodescanner/io_github_dipeshlama_barcodescanner_BarcodeScanMode_Continuous$stableprop|#static{}io_github_dipeshlama_barcodescanner_BarcodeScanMode_Continuous$stableprop[0]
+final val io.github.dipeshlama.barcodescanner/io_github_dipeshlama_barcodescanner_BarcodeScanMode_Single$stableprop // io.github.dipeshlama.barcodescanner/io_github_dipeshlama_barcodescanner_BarcodeScanMode_Single$stableprop|#static{}io_github_dipeshlama_barcodescanner_BarcodeScanMode_Single$stableprop[0]
 final val io.github.dipeshlama.barcodescanner/io_github_dipeshlama_barcodescanner_BarcodeScanResult$stableprop // io.github.dipeshlama.barcodescanner/io_github_dipeshlama_barcodescanner_BarcodeScanResult$stableprop|#static{}io_github_dipeshlama_barcodescanner_BarcodeScanResult$stableprop[0]
 final val io.github.dipeshlama.barcodescanner/io_github_dipeshlama_barcodescanner_BarcodeScannerColors$stableprop // io.github.dipeshlama.barcodescanner/io_github_dipeshlama_barcodescanner_BarcodeScannerColors$stableprop|#static{}io_github_dipeshlama_barcodescanner_BarcodeScannerColors$stableprop[0]
 final val io.github.dipeshlama.barcodescanner/io_github_dipeshlama_barcodescanner_BarcodeScannerConfig$stableprop // io.github.dipeshlama.barcodescanner/io_github_dipeshlama_barcodescanner_BarcodeScannerConfig$stableprop|#static{}io_github_dipeshlama_barcodescanner_BarcodeScannerConfig$stableprop[0]
 final val io.github.dipeshlama.barcodescanner/io_github_dipeshlama_barcodescanner_BarcodeScannerDefaults$stableprop // io.github.dipeshlama.barcodescanner/io_github_dipeshlama_barcodescanner_BarcodeScannerDefaults$stableprop|#static{}io_github_dipeshlama_barcodescanner_BarcodeScannerDefaults$stableprop[0]
+final val io.github.dipeshlama.barcodescanner/io_github_dipeshlama_barcodescanner_BarcodeScannerState$stableprop // io.github.dipeshlama.barcodescanner/io_github_dipeshlama_barcodescanner_BarcodeScannerState$stableprop|#static{}io_github_dipeshlama_barcodescanner_BarcodeScannerState$stableprop[0]
 final val io.github.dipeshlama.barcodescanner/io_github_dipeshlama_barcodescanner_BarcodeScannerStrings$stableprop // io.github.dipeshlama.barcodescanner/io_github_dipeshlama_barcodescanner_BarcodeScannerStrings$stableprop|#static{}io_github_dipeshlama_barcodescanner_BarcodeScannerStrings$stableprop[0]
 
+final fun io.github.dipeshlama.barcodescanner/BarcodeScanner(io.github.dipeshlama.barcodescanner/BarcodeScannerState, androidx.compose.ui/Modifier?, io.github.dipeshlama.barcodescanner/BarcodeScannerConfig?, io.github.dipeshlama.barcodescanner/BarcodeScannerStrings?, io.github.dipeshlama.barcodescanner/BarcodeScannerColors?, kotlin/Function2<androidx.compose.runtime/Composer, kotlin/Int, kotlin/Unit>?, kotlin/Function2<androidx.compose.runtime/Composer, kotlin/Int, kotlin/Unit>?, kotlin/Function4<kotlin/Function0<kotlin/Unit>, kotlin/Boolean, androidx.compose.runtime/Composer, kotlin/Int, kotlin/Unit>?, androidx.compose.runtime/Composer?, kotlin/Int, kotlin/Int) // io.github.dipeshlama.barcodescanner/BarcodeScanner|BarcodeScanner(io.github.dipeshlama.barcodescanner.BarcodeScannerState;androidx.compose.ui.Modifier?;io.github.dipeshlama.barcodescanner.BarcodeScannerConfig?;io.github.dipeshlama.barcodescanner.BarcodeScannerStrings?;io.github.dipeshlama.barcodescanner.BarcodeScannerColors?;kotlin.Function2<androidx.compose.runtime.Composer,kotlin.Int,kotlin.Unit>?;kotlin.Function2<androidx.compose.runtime.Composer,kotlin.Int,kotlin.Unit>?;kotlin.Function4<kotlin.Function0<kotlin.Unit>,kotlin.Boolean,androidx.compose.runtime.Composer,kotlin.Int,kotlin.Unit>?;androidx.compose.runtime.Composer?;kotlin.Int;kotlin.Int){}[0]
 final fun io.github.dipeshlama.barcodescanner/BarcodeScanner(kotlin/Function1<io.github.dipeshlama.barcodescanner/BarcodeScanResult, kotlin/Unit>, kotlin/Function0<kotlin/Unit>, androidx.compose.ui/Modifier?, io.github.dipeshlama.barcodescanner/BarcodeScannerConfig?, io.github.dipeshlama.barcodescanner/BarcodeScannerStrings?, io.github.dipeshlama.barcodescanner/BarcodeScannerColors?, kotlin/Function2<androidx.compose.runtime/Composer, kotlin/Int, kotlin/Unit>?, kotlin/Function2<androidx.compose.runtime/Composer, kotlin/Int, kotlin/Unit>?, kotlin/Function4<kotlin/Function0<kotlin/Unit>, kotlin/Boolean, androidx.compose.runtime/Composer, kotlin/Int, kotlin/Unit>?, androidx.compose.runtime/Composer?, kotlin/Int, kotlin/Int) // io.github.dipeshlama.barcodescanner/BarcodeScanner|BarcodeScanner(kotlin.Function1<io.github.dipeshlama.barcodescanner.BarcodeScanResult,kotlin.Unit>;kotlin.Function0<kotlin.Unit>;androidx.compose.ui.Modifier?;io.github.dipeshlama.barcodescanner.BarcodeScannerConfig?;io.github.dipeshlama.barcodescanner.BarcodeScannerStrings?;io.github.dipeshlama.barcodescanner.BarcodeScannerColors?;kotlin.Function2<androidx.compose.runtime.Composer,kotlin.Int,kotlin.Unit>?;kotlin.Function2<androidx.compose.runtime.Composer,kotlin.Int,kotlin.Unit>?;kotlin.Function4<kotlin.Function0<kotlin.Unit>,kotlin.Boolean,androidx.compose.runtime.Composer,kotlin.Int,kotlin.Unit>?;androidx.compose.runtime.Composer?;kotlin.Int;kotlin.Int){}[0]
+final fun io.github.dipeshlama.barcodescanner/BarcodeScanner(kotlin/Function1<io.github.dipeshlama.barcodescanner/BarcodeScanResult, kotlin/Unit>, kotlin/Function0<kotlin/Unit>, androidx.compose.ui/Modifier?, kotlin/Function1<kotlin.collections/List<io.github.dipeshlama.barcodescanner/BarcodeScanResult>, kotlin/Unit>?, io.github.dipeshlama.barcodescanner/BarcodeScannerConfig?, io.github.dipeshlama.barcodescanner/BarcodeScannerStrings?, io.github.dipeshlama.barcodescanner/BarcodeScannerColors?, kotlin/Function2<androidx.compose.runtime/Composer, kotlin/Int, kotlin/Unit>?, kotlin/Function2<androidx.compose.runtime/Composer, kotlin/Int, kotlin/Unit>?, kotlin/Function4<kotlin/Function0<kotlin/Unit>, kotlin/Boolean, androidx.compose.runtime/Composer, kotlin/Int, kotlin/Unit>?, androidx.compose.runtime/Composer?, kotlin/Int, kotlin/Int) // io.github.dipeshlama.barcodescanner/BarcodeScanner|BarcodeScanner(kotlin.Function1<io.github.dipeshlama.barcodescanner.BarcodeScanResult,kotlin.Unit>;kotlin.Function0<kotlin.Unit>;androidx.compose.ui.Modifier?;kotlin.Function1<kotlin.collections.List<io.github.dipeshlama.barcodescanner.BarcodeScanResult>,kotlin.Unit>?;io.github.dipeshlama.barcodescanner.BarcodeScannerConfig?;io.github.dipeshlama.barcodescanner.BarcodeScannerStrings?;io.github.dipeshlama.barcodescanner.BarcodeScannerColors?;kotlin.Function2<androidx.compose.runtime.Composer,kotlin.Int,kotlin.Unit>?;kotlin.Function2<androidx.compose.runtime.Composer,kotlin.Int,kotlin.Unit>?;kotlin.Function4<kotlin.Function0<kotlin.Unit>,kotlin.Boolean,androidx.compose.runtime.Composer,kotlin.Int,kotlin.Unit>?;androidx.compose.runtime.Composer?;kotlin.Int;kotlin.Int){}[0]
+final fun io.github.dipeshlama.barcodescanner/io_github_dipeshlama_barcodescanner_BarcodeImageScanner$stableprop_getter(): kotlin/Int // io.github.dipeshlama.barcodescanner/io_github_dipeshlama_barcodescanner_BarcodeImageScanner$stableprop_getter|io_github_dipeshlama_barcodescanner_BarcodeImageScanner$stableprop_getter(){}[0]
+final fun io.github.dipeshlama.barcodescanner/io_github_dipeshlama_barcodescanner_BarcodeScanEvent_Cancelled$stableprop_getter(): kotlin/Int // io.github.dipeshlama.barcodescanner/io_github_dipeshlama_barcodescanner_BarcodeScanEvent_Cancelled$stableprop_getter|io_github_dipeshlama_barcodescanner_BarcodeScanEvent_Cancelled$stableprop_getter(){}[0]
+final fun io.github.dipeshlama.barcodescanner/io_github_dipeshlama_barcodescanner_BarcodeScanEvent_Done$stableprop_getter(): kotlin/Int // io.github.dipeshlama.barcodescanner/io_github_dipeshlama_barcodescanner_BarcodeScanEvent_Done$stableprop_getter|io_github_dipeshlama_barcodescanner_BarcodeScanEvent_Done$stableprop_getter(){}[0]
+final fun io.github.dipeshlama.barcodescanner/io_github_dipeshlama_barcodescanner_BarcodeScanEvent_NoCodeFound$stableprop_getter(): kotlin/Int // io.github.dipeshlama.barcodescanner/io_github_dipeshlama_barcodescanner_BarcodeScanEvent_NoCodeFound$stableprop_getter|io_github_dipeshlama_barcodescanner_BarcodeScanEvent_NoCodeFound$stableprop_getter(){}[0]
+final fun io.github.dipeshlama.barcodescanner/io_github_dipeshlama_barcodescanner_BarcodeScanEvent_Scanned$stableprop_getter(): kotlin/Int // io.github.dipeshlama.barcodescanner/io_github_dipeshlama_barcodescanner_BarcodeScanEvent_Scanned$stableprop_getter|io_github_dipeshlama_barcodescanner_BarcodeScanEvent_Scanned$stableprop_getter(){}[0]
+final fun io.github.dipeshlama.barcodescanner/io_github_dipeshlama_barcodescanner_BarcodeScanMode_Continuous$stableprop_getter(): kotlin/Int // io.github.dipeshlama.barcodescanner/io_github_dipeshlama_barcodescanner_BarcodeScanMode_Continuous$stableprop_getter|io_github_dipeshlama_barcodescanner_BarcodeScanMode_Continuous$stableprop_getter(){}[0]
+final fun io.github.dipeshlama.barcodescanner/io_github_dipeshlama_barcodescanner_BarcodeScanMode_Single$stableprop_getter(): kotlin/Int // io.github.dipeshlama.barcodescanner/io_github_dipeshlama_barcodescanner_BarcodeScanMode_Single$stableprop_getter|io_github_dipeshlama_barcodescanner_BarcodeScanMode_Single$stableprop_getter(){}[0]
 final fun io.github.dipeshlama.barcodescanner/io_github_dipeshlama_barcodescanner_BarcodeScanResult$stableprop_getter(): kotlin/Int // io.github.dipeshlama.barcodescanner/io_github_dipeshlama_barcodescanner_BarcodeScanResult$stableprop_getter|io_github_dipeshlama_barcodescanner_BarcodeScanResult$stableprop_getter(){}[0]
 final fun io.github.dipeshlama.barcodescanner/io_github_dipeshlama_barcodescanner_BarcodeScannerColors$stableprop_getter(): kotlin/Int // io.github.dipeshlama.barcodescanner/io_github_dipeshlama_barcodescanner_BarcodeScannerColors$stableprop_getter|io_github_dipeshlama_barcodescanner_BarcodeScannerColors$stableprop_getter(){}[0]
 final fun io.github.dipeshlama.barcodescanner/io_github_dipeshlama_barcodescanner_BarcodeScannerConfig$stableprop_getter(): kotlin/Int // io.github.dipeshlama.barcodescanner/io_github_dipeshlama_barcodescanner_BarcodeScannerConfig$stableprop_getter|io_github_dipeshlama_barcodescanner_BarcodeScannerConfig$stableprop_getter(){}[0]
 final fun io.github.dipeshlama.barcodescanner/io_github_dipeshlama_barcodescanner_BarcodeScannerDefaults$stableprop_getter(): kotlin/Int // io.github.dipeshlama.barcodescanner/io_github_dipeshlama_barcodescanner_BarcodeScannerDefaults$stableprop_getter|io_github_dipeshlama_barcodescanner_BarcodeScannerDefaults$stableprop_getter(){}[0]
+final fun io.github.dipeshlama.barcodescanner/io_github_dipeshlama_barcodescanner_BarcodeScannerState$stableprop_getter(): kotlin/Int // io.github.dipeshlama.barcodescanner/io_github_dipeshlama_barcodescanner_BarcodeScannerState$stableprop_getter|io_github_dipeshlama_barcodescanner_BarcodeScannerState$stableprop_getter(){}[0]
 final fun io.github.dipeshlama.barcodescanner/io_github_dipeshlama_barcodescanner_BarcodeScannerStrings$stableprop_getter(): kotlin/Int // io.github.dipeshlama.barcodescanner/io_github_dipeshlama_barcodescanner_BarcodeScannerStrings$stableprop_getter|io_github_dipeshlama_barcodescanner_BarcodeScannerStrings$stableprop_getter(){}[0]
+final fun io.github.dipeshlama.barcodescanner/rememberBarcodeScannerState(androidx.compose.runtime/Composer?, kotlin/Int): io.github.dipeshlama.barcodescanner/BarcodeScannerState // io.github.dipeshlama.barcodescanner/rememberBarcodeScannerState|rememberBarcodeScannerState(androidx.compose.runtime.Composer?;kotlin.Int){}[0]

@@ -6,6 +6,7 @@ import com.google.android.gms.tasks.Task
 import com.google.mlkit.vision.barcode.BarcodeScanner
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.barcode.BarcodeScanning
+import com.google.mlkit.vision.barcode.ZoomSuggestionOptions
 import com.google.mlkit.vision.barcode.common.Barcode
 import io.github.dipeshlama.barcodescanner.BarcodeFormat
 import io.github.dipeshlama.barcodescanner.BarcodeScanResult
@@ -13,11 +14,15 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
-/** An ML Kit scanner that only looks for [formats]. Close it when done. */
-internal fun barcodeClient(formats: Set<BarcodeFormat>): BarcodeScanner {
+/**
+ * An ML Kit scanner that only looks for [formats], and asks for zoom through [zoom] when given.
+ * Close it when done.
+ */
+internal fun barcodeClient(formats: Set<BarcodeFormat>, zoom: ZoomSuggestionOptions? = null): BarcodeScanner {
     val codes = formats.map { it.toMlKit() }
     val options = BarcodeScannerOptions.Builder()
         .setBarcodeFormats(codes.first(), *codes.drop(1).toIntArray())
+        .apply { if (zoom != null) setZoomSuggestionOptions(zoom) }
         .build()
     return BarcodeScanning.getClient(options)
 }

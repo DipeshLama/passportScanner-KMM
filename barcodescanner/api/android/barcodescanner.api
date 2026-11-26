@@ -25,6 +25,84 @@ public final class io/github/dipeshlama/barcodescanner/BarcodeFormat$Companion {
 	public final fun getTwoDimensional ()Ljava/util/Set;
 }
 
+public final class io/github/dipeshlama/barcodescanner/BarcodeImageScanner {
+	public static final field $stable I
+	public static final field INSTANCE Lio/github/dipeshlama/barcodescanner/BarcodeImageScanner;
+	public final fun scanImage ([BLjava/util/Set;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun scanImage$default (Lio/github/dipeshlama/barcodescanner/BarcodeImageScanner;[BLjava/util/Set;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public abstract interface class io/github/dipeshlama/barcodescanner/BarcodeScanEvent {
+}
+
+public final class io/github/dipeshlama/barcodescanner/BarcodeScanEvent$Cancelled : io/github/dipeshlama/barcodescanner/BarcodeScanEvent {
+	public static final field $stable I
+	public static final field INSTANCE Lio/github/dipeshlama/barcodescanner/BarcodeScanEvent$Cancelled;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/dipeshlama/barcodescanner/BarcodeScanEvent$Done : io/github/dipeshlama/barcodescanner/BarcodeScanEvent {
+	public static final field $stable I
+	public fun <init> (Ljava/util/List;)V
+	public final fun getResults ()Ljava/util/List;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/dipeshlama/barcodescanner/BarcodeScanEvent$NoCodeFound : io/github/dipeshlama/barcodescanner/BarcodeScanEvent {
+	public static final field $stable I
+	public static final field INSTANCE Lio/github/dipeshlama/barcodescanner/BarcodeScanEvent$NoCodeFound;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/dipeshlama/barcodescanner/BarcodeScanEvent$Scanned : io/github/dipeshlama/barcodescanner/BarcodeScanEvent {
+	public static final field $stable I
+	public fun <init> (Lio/github/dipeshlama/barcodescanner/BarcodeScanResult;)V
+	public final fun getResult ()Lio/github/dipeshlama/barcodescanner/BarcodeScanResult;
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/github/dipeshlama/barcodescanner/BarcodeScanMode {
+}
+
+public final class io/github/dipeshlama/barcodescanner/BarcodeScanMode$Continuous : io/github/dipeshlama/barcodescanner/BarcodeScanMode {
+	public static final field $stable I
+	public fun <init> ()V
+	public fun <init> (JZ)V
+	public synthetic fun <init> (JZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()J
+	public final fun component2 ()Z
+	public final fun copy (JZ)Lio/github/dipeshlama/barcodescanner/BarcodeScanMode$Continuous;
+	public static synthetic fun copy$default (Lio/github/dipeshlama/barcodescanner/BarcodeScanMode$Continuous;JZILjava/lang/Object;)Lio/github/dipeshlama/barcodescanner/BarcodeScanMode$Continuous;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDelayMillis ()J
+	public final fun getSkipDuplicates ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/dipeshlama/barcodescanner/BarcodeScanMode$Single : io/github/dipeshlama/barcodescanner/BarcodeScanMode {
+	public static final field $stable I
+	public static final field INSTANCE Lio/github/dipeshlama/barcodescanner/BarcodeScanMode$Single;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/dipeshlama/barcodescanner/BarcodeScanPhase : java/lang/Enum {
+	public static final field Cropping Lio/github/dipeshlama/barcodescanner/BarcodeScanPhase;
+	public static final field Finished Lio/github/dipeshlama/barcodescanner/BarcodeScanPhase;
+	public static final field Paused Lio/github/dipeshlama/barcodescanner/BarcodeScanPhase;
+	public static final field Processing Lio/github/dipeshlama/barcodescanner/BarcodeScanPhase;
+	public static final field Scanning Lio/github/dipeshlama/barcodescanner/BarcodeScanPhase;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/github/dipeshlama/barcodescanner/BarcodeScanPhase;
+	public static fun values ()[Lio/github/dipeshlama/barcodescanner/BarcodeScanPhase;
+}
+
 public final class io/github/dipeshlama/barcodescanner/BarcodeScanResult {
 	public static final field $stable I
 	public fun <init> (Ljava/lang/String;Lio/github/dipeshlama/barcodescanner/BarcodeFormat;)V
@@ -58,22 +136,30 @@ public final class io/github/dipeshlama/barcodescanner/BarcodeScannerColors {
 public final class io/github/dipeshlama/barcodescanner/BarcodeScannerConfig {
 	public static final field $stable I
 	public fun <init> ()V
-	public fun <init> (Ljava/util/Set;FZZZZ)V
-	public synthetic fun <init> (Ljava/util/Set;FZZZZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Ljava/util/Set;FZZZZZLio/github/dipeshlama/barcodescanner/BarcodeScanMode;ZZ)V
+	public synthetic fun <init> (Ljava/util/Set;FZZZZZLio/github/dipeshlama/barcodescanner/BarcodeScanMode;ZZILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Ljava/util/Set;
+	public final fun component10 ()Z
 	public final fun component2 ()F
 	public final fun component3 ()Z
 	public final fun component4 ()Z
 	public final fun component5 ()Z
 	public final fun component6 ()Z
-	public final fun copy (Ljava/util/Set;FZZZZ)Lio/github/dipeshlama/barcodescanner/BarcodeScannerConfig;
-	public static synthetic fun copy$default (Lio/github/dipeshlama/barcodescanner/BarcodeScannerConfig;Ljava/util/Set;FZZZZILjava/lang/Object;)Lio/github/dipeshlama/barcodescanner/BarcodeScannerConfig;
+	public final fun component7 ()Z
+	public final fun component8 ()Lio/github/dipeshlama/barcodescanner/BarcodeScanMode;
+	public final fun component9 ()Z
+	public final fun copy (Ljava/util/Set;FZZZZZLio/github/dipeshlama/barcodescanner/BarcodeScanMode;ZZ)Lio/github/dipeshlama/barcodescanner/BarcodeScannerConfig;
+	public static synthetic fun copy$default (Lio/github/dipeshlama/barcodescanner/BarcodeScannerConfig;Ljava/util/Set;FZZZZZLio/github/dipeshlama/barcodescanner/BarcodeScanMode;ZZILjava/lang/Object;)Lio/github/dipeshlama/barcodescanner/BarcodeScannerConfig;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getAllowGallery ()Z
+	public final fun getAutoZoom ()Z
+	public final fun getBeepOnScan ()Z
 	public final fun getCropGalleryImage ()Z
 	public final fun getFormats ()Ljava/util/Set;
 	public final fun getFrameAspectRatio ()F
 	public final fun getHapticFeedback ()Z
+	public final fun getPinchToZoom ()Z
+	public final fun getScanMode ()Lio/github/dipeshlama/barcodescanner/BarcodeScanMode;
 	public final fun getShowTorch ()Z
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
@@ -89,14 +175,40 @@ public final class io/github/dipeshlama/barcodescanner/BarcodeScannerDefaults {
 }
 
 public final class io/github/dipeshlama/barcodescanner/BarcodeScannerKt {
-	public static final fun BarcodeScanner (Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function0;Landroidx/compose/ui/Modifier;Lio/github/dipeshlama/barcodescanner/BarcodeScannerConfig;Lio/github/dipeshlama/barcodescanner/BarcodeScannerStrings;Lio/github/dipeshlama/barcodescanner/BarcodeScannerColors;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function4;Landroidx/compose/runtime/Composer;II)V
+	public static final fun BarcodeScanner (Lio/github/dipeshlama/barcodescanner/BarcodeScannerState;Landroidx/compose/ui/Modifier;Lio/github/dipeshlama/barcodescanner/BarcodeScannerConfig;Lio/github/dipeshlama/barcodescanner/BarcodeScannerStrings;Lio/github/dipeshlama/barcodescanner/BarcodeScannerColors;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function4;Landroidx/compose/runtime/Composer;II)V
+	public static final synthetic fun BarcodeScanner (Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function0;Landroidx/compose/ui/Modifier;Lio/github/dipeshlama/barcodescanner/BarcodeScannerConfig;Lio/github/dipeshlama/barcodescanner/BarcodeScannerStrings;Lio/github/dipeshlama/barcodescanner/BarcodeScannerColors;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function4;Landroidx/compose/runtime/Composer;II)V
+	public static final fun BarcodeScanner (Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function0;Landroidx/compose/ui/Modifier;Lkotlin/jvm/functions/Function1;Lio/github/dipeshlama/barcodescanner/BarcodeScannerConfig;Lio/github/dipeshlama/barcodescanner/BarcodeScannerStrings;Lio/github/dipeshlama/barcodescanner/BarcodeScannerColors;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function4;Landroidx/compose/runtime/Composer;II)V
+}
+
+public final class io/github/dipeshlama/barcodescanner/BarcodeScannerState {
+	public static final field $stable I
+	public final fun finish ()V
+	public final fun getEvents ()Lkotlinx/coroutines/flow/Flow;
+	public final fun getHasTorch ()Z
+	public final fun getMaxZoomRatio ()F
+	public final fun getMinZoomRatio ()F
+	public final fun getPhase ()Lio/github/dipeshlama/barcodescanner/BarcodeScanPhase;
+	public final fun getResult ()Lio/github/dipeshlama/barcodescanner/BarcodeScanResult;
+	public final fun getResults ()Ljava/util/List;
+	public final fun getZoomRatio ()F
+	public final fun isPaused ()Z
+	public final fun isTorchOn ()Z
+	public final fun pause ()V
+	public final fun restart ()V
+	public final fun resume ()V
+	public final fun setTorch (Z)V
+	public final fun setZoomRatio (F)V
+}
+
+public final class io/github/dipeshlama/barcodescanner/BarcodeScannerStateKt {
+	public static final fun rememberBarcodeScannerState (Landroidx/compose/runtime/Composer;I)Lio/github/dipeshlama/barcodescanner/BarcodeScannerState;
 }
 
 public final class io/github/dipeshlama/barcodescanner/BarcodeScannerStrings {
 	public static final field $stable I
 	public fun <init> ()V
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
-	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Ljava/lang/String;
 	public final fun component10 ()Ljava/lang/String;
 	public final fun component11 ()Ljava/lang/String;
@@ -104,6 +216,7 @@ public final class io/github/dipeshlama/barcodescanner/BarcodeScannerStrings {
 	public final fun component13 ()Ljava/lang/String;
 	public final fun component14 ()Ljava/lang/String;
 	public final fun component15 ()Ljava/lang/String;
+	public final fun component16 ()Ljava/lang/String;
 	public final fun component2 ()Ljava/lang/String;
 	public final fun component3 ()Ljava/lang/String;
 	public final fun component4 ()Ljava/lang/String;
@@ -112,8 +225,8 @@ public final class io/github/dipeshlama/barcodescanner/BarcodeScannerStrings {
 	public final fun component7 ()Ljava/lang/String;
 	public final fun component8 ()Ljava/lang/String;
 	public final fun component9 ()Ljava/lang/String;
-	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lio/github/dipeshlama/barcodescanner/BarcodeScannerStrings;
-	public static synthetic fun copy$default (Lio/github/dipeshlama/barcodescanner/BarcodeScannerStrings;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/github/dipeshlama/barcodescanner/BarcodeScannerStrings;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lio/github/dipeshlama/barcodescanner/BarcodeScannerStrings;
+	public static synthetic fun copy$default (Lio/github/dipeshlama/barcodescanner/BarcodeScannerStrings;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/github/dipeshlama/barcodescanner/BarcodeScannerStrings;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getAllowCamera ()Ljava/lang/String;
 	public final fun getBack ()Ljava/lang/String;
@@ -122,6 +235,7 @@ public final class io/github/dipeshlama/barcodescanner/BarcodeScannerStrings {
 	public final fun getCropInstruction ()Ljava/lang/String;
 	public final fun getCropReset ()Ljava/lang/String;
 	public final fun getCropTitle ()Ljava/lang/String;
+	public final fun getDone ()Ljava/lang/String;
 	public final fun getGallery ()Ljava/lang/String;
 	public final fun getInstruction ()Ljava/lang/String;
 	public final fun getNoCodeFound ()Ljava/lang/String;

@@ -29,7 +29,9 @@ Kotlin Multiplatform / Compose Multiplatform scanners for **Android and iOS**, u
 
 - Live scanning that returns the first code inside a square frame (or a wider frame for 1D barcodes)
 - QR, Aztec, Data Matrix, PDF417, EAN-13/8, UPC-A/E, Code 128/39/93, Codabar and ITF, with the formats to read configurable
-- Flashlight button, gallery import with optional cropping, and camera permission handling
+- Flashlight button, pinch-to-zoom, gallery import with optional cropping, and camera permission handling
+- Continuous mode for scanning several codes in a row, and an optional beep
+- A `BarcodeScannerState` with a Flow of scan events, and a headless `BarcodeImageScanner.scanImage(bytes)` for reading images without UI
 
 ## Supported platforms
 
@@ -311,11 +313,55 @@ BarcodeScanner(
         cropGalleryImage = false,     // true: let the user crop a gallery photo before it's read
         showTorch = true,             // flashlight button (hidden if the device has none)
         hapticFeedback = true,        // vibrate when a code is read
+        beepOnScan = false,           // beep when a code is read
+        pinchToZoom = true,           // zoom with two fingers
+        autoZoom = false,             // Android only: zoom in on codes too far away to read
+        scanMode = BarcodeScanMode.Single,
     ),
 )
 ```
 
 Limiting `formats` to what you need scans faster and keeps nearby unrelated codes from being picked up. If a gallery photo has no code, the scanner shows `strings.noCodeFound` and keeps scanning.
+
+### Continuous scanning
+
+With `scanMode = BarcodeScanMode.Continuous()`, the scanner keeps reading: `onResult` is called for each new code, and a Done button calls `onDone` with all of them. `delayMillis` sets the pause between codes, and `skipDuplicates` ignores codes already read.
+
+```kotlin
+BarcodeScanner(
+    onResult = { code -> /* each new code */ },
+    onDone = { codes -> scanning = false },
+    onCancel = { scanning = false },
+    config = BarcodeScannerConfig(scanMode = BarcodeScanMode.Continuous(delayMillis = 1000, skipDuplicates = true)),
+)
+```
+
+### State and events
+
+To observe or control the scanner from outside it, pass a `BarcodeScannerState` and collect its `events` Flow, or read `phase`, `result` and `results` as Compose state. The state also has `pause()`, `resume()`, `setTorch(on)`, `setZoomRatio(ratio)`, `finish()` and `restart()`.
+
+```kotlin
+val scanner = rememberBarcodeScannerState()
+LaunchedEffect(scanner) {
+    scanner.events.collect { event ->
+        when (event) {
+            is BarcodeScanEvent.Scanned -> onCode(event.result)
+            is BarcodeScanEvent.Done -> onCodes(event.results) // continuous mode
+            BarcodeScanEvent.Cancelled -> navigateBack()
+            BarcodeScanEvent.NoCodeFound -> Unit
+        }
+    }
+}
+BarcodeScanner(state = scanner, config = BarcodeScannerConfig(/* ... */))
+```
+
+### Without UI
+
+To read a code from an image you already have, call `BarcodeImageScanner.scanImage(bytes)` from any coroutine. It uses the same on-device reader and returns `BarcodeScanResult?`.
+
+```kotlin
+val code: BarcodeScanResult? = BarcodeImageScanner.scanImage(pngBytes, formats = setOf(BarcodeFormat.QrCode))
+```
 
 ### Customising the UI
 
@@ -323,7 +369,7 @@ Change any text with `strings = BarcodeScannerStrings(...)` and the overlay colo
 
 ## Sample app
 
-The `sample/` folder holds a small app with both scanners. It shows each result, and has switches for gallery cropping and the barcode-only (wide frame) mode. It is separate from the library in `passportscanner/` and uses it the way your own app would.
+The `sample/` folder holds a small app with both scanners. It shows each result, and has switches for gallery cropping, the barcode-only (wide frame) mode, continuous scanning and the beep. It is separate from the library in `passportscanner/` and uses it the way your own app would.
 
 - `sample/androidApp`: the Android app. `sample/iosApp`: the iOS app. `sample/shared`: the Compose screen both of them show.
 - Android: `./gradlew :sample:androidApp:installDebug`
@@ -333,7 +379,8 @@ The `sample/` folder holds a small app with both scanners. It shows each result,
 
 - TD3 (passport booklet) MRZs only; ID cards (TD1/TD2) and visas aren't parsed yet.
 - Both live scanners assume the phone is held in portrait.
-- The barcode scanner returns one code per scan, as text. Codes without a text value are skipped.
+- The barcode scanner returns codes as text. Codes without a text value are skipped.
+- `autoZoom` works on Android only; on iOS the camera only zooms in a little on its own when it can't focus close enough.
 - The review sheet shows dates in ISO format (`yyyy-MM-dd`).
 
 ## License

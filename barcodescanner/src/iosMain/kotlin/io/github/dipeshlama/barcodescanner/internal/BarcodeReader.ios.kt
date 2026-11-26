@@ -25,15 +25,16 @@ import platform.posix.memcpy
 
 internal object BarcodeReader {
     /**
-     * Returns the first code of [formats] in the image behind [handler], looking only inside
-     * [region] (pixels of the upright image) when given.
+     * Returns the first code of [formats] in the image behind [handler] that [accept] allows,
+     * looking only inside [region] (pixels of the upright image) when given.
      */
     fun find(
         handler: VNImageRequestHandler,
         formats: Set<BarcodeFormat>,
         imageWidth: Int,
         imageHeight: Int,
-        region: IntRect? = null
+        region: IntRect? = null,
+        accept: (BarcodeScanResult) -> Boolean = { true }
     ): BarcodeScanResult? {
         fun request(revision1: Boolean) = VNDetectBarcodesRequest().apply {
             if (revision1) revision = VNDetectBarcodesRequestRevision1
@@ -61,7 +62,7 @@ internal object BarcodeReader {
             .firstNotNullOfOrNull { observation ->
                 val value = observation.payloadStringValue ?: return@firstNotNullOfOrNull null
                 val symbology = observation.symbology ?: return@firstNotNullOfOrNull null
-                appleBarcode(symbology, value, formats)
+                appleBarcode(symbology, value, formats)?.takeIf(accept)
             }
     }
 

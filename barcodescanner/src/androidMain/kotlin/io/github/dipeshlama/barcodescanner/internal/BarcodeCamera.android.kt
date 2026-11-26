@@ -2,6 +2,8 @@ package io.github.dipeshlama.barcodescanner.internal
 
 import android.content.Context
 import android.content.pm.PackageManager
+import android.media.AudioManager
+import android.media.ToneGenerator
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
@@ -13,6 +15,7 @@ import androidx.camera.core.ExperimentalGetImage
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
 import androidx.camera.core.TorchState
+import androidx.camera.core.ZoomState
 import androidx.camera.core.resolutionselector.AspectRatioStrategy
 import androidx.camera.core.resolutionselector.ResolutionSelector
 import androidx.camera.core.resolutionselector.ResolutionStrategy
@@ -39,16 +42,21 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.google.android.gms.tasks.Tasks
 import com.google.mlkit.vision.barcode.BarcodeScanner
+import com.google.mlkit.vision.barcode.ZoomSuggestionOptions
 import com.google.mlkit.vision.common.InputImage
 import io.github.dipeshlama.barcodescanner.BarcodeFormat
 import io.github.dipeshlama.barcodescanner.BarcodeScanResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.ByteArrayInputStream
+import java.io.InputStream
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 
 private val ANALYSIS_RESOLUTION = Size(1920, 1080)
+private const val BEEP_VOLUME = 80
+private const val BEEP_MILLIS = 150
 
 @Composable
 internal actual fun BarcodeCameraView(
@@ -56,6 +64,9 @@ internal actual fun BarcodeCameraView(
     formats: Set<BarcodeFormat>,
     isAutoScanEnabled: Boolean,
     crop: PreviewCrop?,
+    accept: (BarcodeScanResult) -> Boolean,
+    pinchToZoom: Boolean,
+    autoZoom: Boolean,
     onResult: (BarcodeScanResult) -> Unit,
     modifier: Modifier
 ) {
@@ -65,16 +76,11 @@ internal actual fun BarcodeCameraView(
     val currentCrop by rememberUpdatedState(crop)
     val currentFormats by rememberUpdatedState(formats)
     val currentOnResult by rememberUpdatedState(onResult)
+    val currentAccept by rememberUpdatedState(accept)
 
     val mainExecutor = remember(context) { ContextCompat.getMainExecutor(context) }
     val analysisExecutor = remember { Executors.newSingleThreadExecutor() }
     val hasDelivered = remember { AtomicBoolean(false) }
-
-    val reader = remember(formats) { barcodeClient(formats) }
-    val currentReader by rememberUpdatedState(reader)
-    DisposableEffect(reader) {
-        onDispose { reader.close() }
-    }
 
     val cameraController = remember(context) {
         val resolutionSelector = ResolutionSelector.Builder()
@@ -94,6 +100,28 @@ internal actual fun BarcodeCameraView(
         }
     }
 
+    // ML Kit asks for a zoom when it sees a code too small to read; the limit comes from the camera.
+    val autoZoomLimit = if (autoZoom) controller.maxZoomRatio else 1f
+    val reader = remember(formats, autoZoomLimit) {
+        val zoom = if (autoZoomLimit > 1f) {
+            ZoomSuggestionOptions.Builder { ratio ->
+                mainExecutor.execute { cameraController.setZoomRatio(ratio) }
+                true
+            }.setMaxSupportedZoomRatio(autoZoomLimit).build()
+        } else {
+            null
+        }
+        barcodeClient(formats, zoom)
+    }
+    val currentReader by rememberUpdatedState(reader)
+    DisposableEffect(reader) {
+        onDispose { reader.close() }
+    }
+
+    LaunchedEffect(cameraController, pinchToZoom) {
+        cameraController.isPinchToZoomEnabled = pinchToZoom
+    }
+
     LaunchedEffect(isAutoScanEnabled) {
         if (isAutoScanEnabled) hasDelivered.set(false)
     }
@@ -106,6 +134,7 @@ internal actual fun BarcodeCameraView(
                 reader = { currentReader },
                 formats = { currentFormats },
                 crop = { currentCrop },
+                accept = { currentAccept(it) },
                 onFound = { result ->
                     if (hasDelivered.compareAndSet(false, true)) {
                         mainExecutor.execute { currentOnResult(result) }
@@ -126,9 +155,19 @@ internal actual fun BarcodeCameraView(
         // The torch also turns off on its own, e.g. when the app goes to the background.
         val torchObserver = Observer<Int> { controller.isTorchOn = it == TorchState.ON }
         cameraController.torchState.observe(lifecycleOwner, torchObserver)
+
+        controller.zoomHandler = { ratio -> cameraController.setZoomRatio(ratio) }
+        val zoomObserver = Observer<ZoomState> { zoom ->
+            controller.minZoomRatio = zoom.minZoomRatio
+            controller.maxZoomRatio = zoom.maxZoomRatio
+            controller.zoomRatio = zoom.zoomRatio
+        }
+        cameraController.zoomState.observe(lifecycleOwner, zoomObserver)
         onDispose {
             cameraController.torchState.removeObserver(torchObserver)
+            cameraController.zoomState.removeObserver(zoomObserver)
             controller.torchHandler = null
+            controller.zoomHandler = null
             controller.isTorchOn = false
         }
     }
@@ -156,6 +195,7 @@ private fun analyzeFrame(
     reader: () -> BarcodeScanner,
     formats: () -> Set<BarcodeFormat>,
     crop: () -> PreviewCrop?,
+    accept: (BarcodeScanResult) -> Boolean,
     onFound: (BarcodeScanResult) -> Unit
 ) {
     proxy.use {
@@ -177,7 +217,7 @@ private fun analyzeFrame(
         val result = barcodes.firstNotNullOfOrNull { barcode ->
             val bounds = barcode.boundingBox?.toComposeRect() ?: return@firstNotNullOfOrNull null
             if (!frameCrop.contains(bounds, uprightWidth, uprightHeight)) return@firstNotNullOfOrNull null
-            barcode.toResult(wanted)
+            barcode.toResult(wanted)?.takeIf(accept)
         } ?: return
         onFound(result)
     }
@@ -231,21 +271,55 @@ private class AndroidPickedImage(private val bitmap: Bitmap) : PickedImage {
         }
 }
 
+internal actual fun decodeBarcodeImage(bytes: ByteArray): PickedImage? =
+    runCatching {
+        val open = { ByteArrayInputStream(bytes) }
+        val rotation = runCatching { open().use { ExifInterface(it).rotationDegrees } }.getOrDefault(0)
+        decodeSampledBitmap(open)?.uprightAndScaled(rotation)
+    }.getOrNull()?.let(::AndroidPickedImage)
+
+@Composable
+internal actual fun rememberBeep(): () -> Unit {
+    val beeper = remember { Beeper() }
+    DisposableEffect(beeper) {
+        onDispose { beeper.release() }
+    }
+    return beeper::play
+}
+
+/** Plays the beep with a [ToneGenerator], created on first use since it holds an audio resource. */
+private class Beeper {
+    private var tone: ToneGenerator? = null
+
+    fun play() {
+        runCatching {
+            val generator = tone ?: ToneGenerator(AudioManager.STREAM_NOTIFICATION, BEEP_VOLUME).also { tone = it }
+            generator.startTone(ToneGenerator.TONE_PROP_BEEP, BEEP_MILLIS)
+        }
+    }
+
+    fun release() {
+        tone?.release()
+        tone = null
+    }
+}
+
 private fun loadUprightBitmap(context: Context, uri: Uri): Bitmap? =
     runCatching {
-        decodeSampledBitmap(context, uri)?.uprightAndScaled(readExifRotation(context, uri))
+        decodeSampledBitmap { context.contentResolver.openInputStream(uri) }
+            ?.uprightAndScaled(readExifRotation(context, uri))
     }.getOrNull()
 
-private fun decodeSampledBitmap(context: Context, uri: Uri) = context.contentResolver.run {
+private fun decodeSampledBitmap(open: () -> InputStream?): Bitmap? {
     val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-    openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, bounds) }
+    open()?.use { BitmapFactory.decodeStream(it, null, bounds) }
     val longestEdge = maxOf(bounds.outWidth, bounds.outHeight)
-    if (longestEdge <= 0) return@run null
+    if (longestEdge <= 0) return null
 
     var sampleSize = 1
     while (longestEdge / (sampleSize * 2) >= GALLERY_IMAGE_MAX_EDGE) sampleSize *= 2
     val options = BitmapFactory.Options().apply { inSampleSize = sampleSize }
-    openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, options) }
+    return open()?.use { BitmapFactory.decodeStream(it, null, options) }
 }
 
 private fun readExifRotation(context: Context, uri: Uri): Int =

@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -67,19 +68,19 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
-import io.github.dipeshlama.barcodescanner.internal.BarcodeCameraController
 import io.github.dipeshlama.barcodescanner.internal.BarcodeCameraView
 import io.github.dipeshlama.barcodescanner.internal.ImageCropScreen
 import io.github.dipeshlama.barcodescanner.internal.PickedImage
 import io.github.dipeshlama.barcodescanner.internal.PreviewCrop
 import io.github.dipeshlama.barcodescanner.internal.ScannerIcons
-import io.github.dipeshlama.barcodescanner.internal.ScannerState
+import io.github.dipeshlama.barcodescanner.internal.rememberBeep
 import io.github.dipeshlama.barcodescanner.internal.rememberCameraPermission
 import io.github.dipeshlama.barcodescanner.internal.rememberGalleryPicker
 import kotlinx.coroutines.delay
@@ -89,27 +90,68 @@ private const val SQUARE_FRAME_WIDTH_FRACTION = 0.72f
 private const val WIDE_FRAME_WIDTH_FRACTION = 0.88f
 private const val WIDE_FRAME_MIN_ASPECT_RATIO = 1.25f
 private const val NOT_FOUND_MESSAGE_MILLIS = 3000L
+private const val RECENT_SCAN_MESSAGE_MILLIS = 1500L
 private val FrameCornerRadius = 16.dp
 private val FrameBracketLength = 32.dp
 private val FrameBracketWidth = 3.dp
 private val ScanLineBandHeight = 47.dp
 
 /**
- * Full-screen QR code and barcode scanner with live scanning inside a frame, a flashlight button and
- * gallery import, with optional cropping of gallery photos ([BarcodeScannerConfig.cropGalleryImage]).
+ * Full-screen QR code and barcode scanner with live scanning inside a frame, a flashlight button,
+ * pinch-to-zoom and gallery import, with optional cropping of gallery photos
+ * ([BarcodeScannerConfig.cropGalleryImage]).
  *
- * [onResult] is called once with the first code read; remove the scanner from composition after
- * that. [onCancel] is called when the user goes back, from the top bar or with system back.
+ * In [BarcodeScanMode.Single] (the default), [onResult] is called once with the first code read;
+ * remove the scanner from composition after that. In [BarcodeScanMode.Continuous], [onResult] is
+ * called for each new code and [onDone] with every code read when the user taps Done.
+ * [onCancel] is called when the user goes back, from the top bar or with system back.
+ *
+ * To observe or control the scanner from outside (pause it, zoom, turn on the flashlight), or to
+ * receive results as a [kotlinx.coroutines.flow.Flow], use the overload that takes a
+ * [BarcodeScannerState] instead.
  *
  * On iOS, add `NSCameraUsageDescription` to the app's Info.plist.
  *
- * @param config behaviour options, including which formats to read and the frame shape.
+ * @param onDone called with every code read, oldest first, when the user taps Done in
+ *   [BarcodeScanMode.Continuous]. Not called in single mode.
+ * @param config behaviour options, including which formats to read, the frame shape and the scan mode.
  * @param strings text shown by the scanner.
  * @param colors colours of the camera overlay, including the scan line.
  * @param title replaces the top bar title. Null uses [BarcodeScannerStrings.title].
  * @param instruction replaces the message above the frame. Null uses [BarcodeScannerStrings.instruction].
  * @param galleryButton replaces the gallery button. Null uses [BarcodeScannerDefaults.GalleryButton].
  */
+@Composable
+public fun BarcodeScanner(
+    onResult: (BarcodeScanResult) -> Unit,
+    onCancel: () -> Unit,
+    modifier: Modifier = Modifier,
+    onDone: (List<BarcodeScanResult>) -> Unit = {},
+    config: BarcodeScannerConfig = BarcodeScannerConfig(),
+    strings: BarcodeScannerStrings = BarcodeScannerStrings(),
+    colors: BarcodeScannerColors = BarcodeScannerDefaults.colors(),
+    title: (@Composable () -> Unit)? = null,
+    instruction: (@Composable () -> Unit)? = null,
+    galleryButton: (@Composable (onClick: () -> Unit, enabled: Boolean) -> Unit)? = null,
+) {
+    val state = remember { BarcodeScannerState(emitsEvents = false) }
+    BarcodeScannerContent(
+        state = state,
+        onResult = onResult,
+        onDone = onDone,
+        onCancel = onCancel,
+        modifier = modifier,
+        config = config,
+        strings = strings,
+        colors = colors,
+        title = title,
+        instruction = instruction,
+        galleryButton = galleryButton,
+    )
+}
+
+/** The 1.0 signature, kept so code compiled against it still links. */
+@Deprecated("Kept for binary compatibility.", level = DeprecationLevel.HIDDEN)
 @Composable
 public fun BarcodeScanner(
     onResult: (BarcodeScanResult) -> Unit,
@@ -122,26 +164,108 @@ public fun BarcodeScanner(
     instruction: (@Composable () -> Unit)? = null,
     galleryButton: (@Composable (onClick: () -> Unit, enabled: Boolean) -> Unit)? = null,
 ) {
+    BarcodeScanner(
+        onResult = onResult,
+        onCancel = onCancel,
+        modifier = modifier,
+        onDone = {},
+        config = config,
+        strings = strings,
+        colors = colors,
+        title = title,
+        instruction = instruction,
+        galleryButton = galleryButton,
+    )
+}
+
+/**
+ * Full-screen QR code and barcode scanner driven by a [BarcodeScannerState], the same scanner as
+ * the `BarcodeScanner(onResult, onCancel)` overload.
+ *
+ * Codes and back presses are reported through [BarcodeScannerState.events] (and
+ * [BarcodeScannerState.result]), and the scanner can be controlled with
+ * [BarcodeScannerState.pause], [BarcodeScannerState.resume], [BarcodeScannerState.setTorch],
+ * [BarcodeScannerState.setZoomRatio], [BarcodeScannerState.finish] and [BarcodeScannerState.restart].
+ * Collect [BarcodeScannerState.events] to handle [BarcodeScanEvent.Cancelled]; the scanner consumes
+ * system back while it's shown.
+ *
+ * Once finished ([BarcodeScanPhase.Finished]), remove the scanner from composition, or call
+ * [BarcodeScannerState.restart] to scan again.
+ *
+ * The other parameters are the same as in the `BarcodeScanner(onResult, onCancel)` overload.
+ */
+@Composable
+public fun BarcodeScanner(
+    state: BarcodeScannerState,
+    modifier: Modifier = Modifier,
+    config: BarcodeScannerConfig = BarcodeScannerConfig(),
+    strings: BarcodeScannerStrings = BarcodeScannerStrings(),
+    colors: BarcodeScannerColors = BarcodeScannerDefaults.colors(),
+    title: (@Composable () -> Unit)? = null,
+    instruction: (@Composable () -> Unit)? = null,
+    galleryButton: (@Composable (onClick: () -> Unit, enabled: Boolean) -> Unit)? = null,
+) {
+    BarcodeScannerContent(
+        state = state,
+        onResult = {},
+        onDone = {},
+        onCancel = {},
+        modifier = modifier,
+        config = config,
+        strings = strings,
+        colors = colors,
+        title = title,
+        instruction = instruction,
+        galleryButton = galleryButton,
+    )
+}
+
+@Composable
+private fun BarcodeScannerContent(
+    state: BarcodeScannerState,
+    onResult: (BarcodeScanResult) -> Unit,
+    onDone: (List<BarcodeScanResult>) -> Unit,
+    onCancel: () -> Unit,
+    modifier: Modifier,
+    config: BarcodeScannerConfig,
+    strings: BarcodeScannerStrings,
+    colors: BarcodeScannerColors,
+    title: (@Composable () -> Unit)?,
+    instruction: (@Composable () -> Unit)?,
+    galleryButton: (@Composable (onClick: () -> Unit, enabled: Boolean) -> Unit)?,
+) {
+    state.config = config
+    val scanner = state.scanner
     val currentConfig by rememberUpdatedState(config)
     val currentOnResult by rememberUpdatedState(onResult)
-    val state = remember { ScannerState(config = { currentConfig }) }
+    val currentOnDone by rememberUpdatedState(onDone)
+    val currentOnCancel by rememberUpdatedState(onCancel)
     val haptics = LocalHapticFeedback.current
+    val beep = rememberBeep()
     val deliver: (BarcodeScanResult?) -> Unit = { result ->
-        if (result != null) {
+        state.onScanned(result)?.let {
             if (currentConfig.hapticFeedback) haptics.performHapticFeedback(HapticFeedbackType.Confirm)
-            currentOnResult(result)
+            if (currentConfig.beepOnScan) beep()
+            currentOnResult(it)
         }
     }
+    val cancel = {
+        state.onCancelled()
+        currentOnCancel()
+    }
+    val done = {
+        state.onDone()?.let { currentOnDone(it) }
+        Unit
+    }
 
-    val currentOnCancel by rememberUpdatedState(onCancel)
     NavigationBackHandler(
         state = rememberNavigationEventState(NavigationEventInfo.None),
         // The crop screen handles back itself, to return to the camera.
-        isBackEnabled = !state.isFinished && state.cropImage == null,
-        onBackCompleted = { currentOnCancel() }
+        isBackEnabled = !scanner.isFinished && scanner.cropImage == null,
+        onBackCompleted = cancel
     )
 
-    val cameraController = remember { BarcodeCameraController() }
+    val cameraController = state.camera
     val cameraPermission = rememberCameraPermission()
     val isCameraGranted = cameraPermission.isGranted
 
@@ -149,10 +273,24 @@ public fun BarcodeScanner(
         if (!cameraPermission.isGranted) cameraPermission.request()
     }
 
-    LaunchedEffect(state.isNotFoundVisible) {
-        if (state.isNotFoundVisible) {
+    LaunchedEffect(scanner.isNotFoundVisible) {
+        if (scanner.isNotFoundVisible) {
             delay(NOT_FOUND_MESSAGE_MILLIS)
-            state.dismissNotFound()
+            scanner.dismissNotFound()
+        }
+    }
+
+    LaunchedEffect(scanner.isCoolingDown) {
+        if (scanner.isCoolingDown) {
+            delay((currentConfig.scanMode as? BarcodeScanMode.Continuous)?.delayMillis ?: 0L)
+            scanner.endCooldown()
+        }
+    }
+
+    LaunchedEffect(scanner.recentScanId) {
+        if (scanner.recentScan != null) {
+            delay(RECENT_SCAN_MESSAGE_MILLIS)
+            scanner.dismissRecentScan()
         }
     }
 
@@ -160,16 +298,17 @@ public fun BarcodeScanner(
     val readPicked: (PickedImage, IntRect?) -> Unit = { image, crop ->
         scope.launch {
             val result = runCatching { image.read(currentConfig.formats, crop) }.getOrNull()
-            deliver(state.onGalleryResult(result))
+            if (result == null && !scanner.isFinished) state.onNoCodeFound()
+            deliver(scanner.onGalleryResult(result))
         }
     }
     val launchGallery = rememberGalleryPicker(
-        onLoading = state::onProcessingStarted,
+        onLoading = scanner::onProcessingStarted,
         onPicked = { image ->
             if (image == null) {
-                state.onGalleryCancelled()
+                scanner.onGalleryCancelled()
             } else {
-                state.onGalleryPicked(image)?.let { readPicked(it, null) }
+                scanner.onGalleryPicked(image)?.let { readPicked(it, null) }
             }
         }
     )
@@ -183,6 +322,7 @@ public fun BarcodeScanner(
     }
     val frameWidthFraction =
         if (config.frameAspectRatio >= WIDE_FRAME_MIN_ASPECT_RATIO) WIDE_FRAME_WIDTH_FRACTION else SQUARE_FRAME_WIDTH_FRACTION
+    val isContinuous = config.scanMode is BarcodeScanMode.Continuous
 
     Box(
         modifier = modifier
@@ -197,9 +337,12 @@ public fun BarcodeScanner(
             BarcodeCameraView(
                 controller = cameraController,
                 formats = config.formats,
-                isAutoScanEnabled = state.isAutoScanEnabled,
+                isAutoScanEnabled = scanner.isAutoScanEnabled,
                 crop = previewCrop,
-                onResult = { result -> deliver(state.onCameraResult(result)) },
+                accept = scanner::accepts,
+                pinchToZoom = config.pinchToZoom,
+                autoZoom = config.autoZoom,
+                onResult = { result -> deliver(scanner.onCameraResult(result)) },
                 modifier = Modifier.fillMaxSize()
             )
         }
@@ -215,7 +358,7 @@ public fun BarcodeScanner(
             ) {
                 ScannerTopBar(
                     backDescription = strings.back,
-                    onBack = onCancel,
+                    onBack = cancel,
                     action = {
                         if (config.showTorch && isCameraGranted && cameraController.hasTorch) {
                             val isOn = cameraController.isTorchOn
@@ -246,7 +389,7 @@ public fun BarcodeScanner(
                     }
 
                     ScanFrame(
-                        isScanning = isCameraGranted && state.isAutoScanEnabled,
+                        isScanning = isCameraGranted && scanner.isLive,
                         scanLineColor = colors.scanLine,
                         cornerColor = colors.frameCorners,
                         modifier = Modifier
@@ -264,29 +407,41 @@ public fun BarcodeScanner(
                         }
                     }
 
-                    // Space is kept for the message so the frame doesn't move when it shows.
+                    // Space is kept for the messages so the frame doesn't move when they show.
                     Box(
                         modifier = Modifier.fillMaxWidth().heightIn(min = 40.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         androidx.compose.animation.AnimatedVisibility(
-                            visible = state.isNotFoundVisible,
+                            visible = scanner.isNotFoundVisible,
                             enter = fadeIn(),
                             exit = fadeOut()
                         ) {
                             BarcodeScannerDefaults.Instruction(strings.noCodeFound, backgroundColor = colors.chipBackground)
                         }
+                        val recent = scanner.recentScan
+                        androidx.compose.animation.AnimatedVisibility(
+                            visible = recent != null && !scanner.isNotFoundVisible,
+                            enter = fadeIn(),
+                            exit = fadeOut()
+                        ) {
+                            // Keeps the last value while fading out.
+                            var shown by remember { mutableStateOf("") }
+                            if (recent != null) shown = recent.value
+                            RecentScanChip(text = shown, backgroundColor = colors.chipBackground)
+                        }
                     }
                 }
 
-                Box(
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 32.dp),
-                    contentAlignment = Alignment.Center
+                        .padding(start = 16.dp, end = 16.dp, bottom = 32.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     if (config.allowGallery) {
-                        val galleryEnabled = !state.isProcessing && !state.isFinished
+                        val galleryEnabled = !scanner.isProcessing && !scanner.isFinished
                         if (galleryButton != null) {
                             galleryButton(launchGallery, galleryEnabled)
                         } else {
@@ -298,24 +453,49 @@ public fun BarcodeScanner(
                             )
                         }
                     }
+                    if (isContinuous) {
+                        val count = scanner.results.size
+                        Button(
+                            onClick = done,
+                            enabled = count > 0 && !scanner.isProcessing && !scanner.isFinished,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = colors.permissionButtonContainer,
+                                contentColor = colors.permissionButtonContent
+                            )
+                        ) { Text(if (count > 0) "${strings.done} ($count)" else strings.done) }
+                    }
                 }
             }
         }
 
-        state.cropImage?.let { image ->
+        scanner.cropImage?.let { image ->
             ImageCropScreen(
                 image = image,
                 strings = strings,
                 colors = colors,
-                onCancel = state::cancelCrop,
-                onConfirm = { crop -> state.confirmCrop()?.let { readPicked(it, crop) } }
+                onCancel = scanner::cancelCrop,
+                onConfirm = { crop -> scanner.confirmCrop()?.let { readPicked(it, crop) } }
             )
         }
 
-        if (state.isProcessing) {
+        if (scanner.isProcessing) {
             ProcessingOverlay(text = strings.processing, colors = colors)
         }
     }
+}
+
+@Composable
+private fun RecentScanChip(text: String, backgroundColor: Color) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.titleSmall,
+        color = LocalContentColor.current,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+        modifier = Modifier
+            .background(backgroundColor, RoundedCornerShape(4.dp))
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+    )
 }
 
 @Composable

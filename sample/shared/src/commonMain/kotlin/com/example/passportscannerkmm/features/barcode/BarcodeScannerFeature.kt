@@ -31,6 +31,7 @@ import com.example.passportscannerkmm.ui.DemoScaffold
 import com.example.passportscannerkmm.ui.LabeledValue
 import com.example.passportscannerkmm.ui.StatusChip
 import io.github.dipeshlama.barcodescanner.BarcodeFormat
+import io.github.dipeshlama.barcodescanner.BarcodeScanMode
 import io.github.dipeshlama.barcodescanner.BarcodeScanResult
 import io.github.dipeshlama.barcodescanner.BarcodeScanner
 import io.github.dipeshlama.barcodescanner.BarcodeScannerConfig
@@ -45,26 +46,32 @@ object BarcodeScannerFeature : Feature {
     @Composable
     override fun Content(onBack: () -> Unit) {
         var isScanning by remember { mutableStateOf(false) }
-        var result by remember { mutableStateOf<BarcodeScanResult?>(null) }
+        var results by remember { mutableStateOf<List<BarcodeScanResult>>(emptyList()) }
         var cropGalleryImage by remember { mutableStateOf(true) }
         var linearOnly by remember { mutableStateOf(false) }
+        var continuous by remember { mutableStateOf(false) }
+        var beep by remember { mutableStateOf(false) }
 
         if (isScanning) {
             BarcodeScanner(
                 onResult = {
-                    result = it
+                    if (!continuous) {
+                        results = listOf(it)
+                        isScanning = false
+                    }
+                },
+                onDone = {
+                    results = it
                     isScanning = false
                 },
                 onCancel = { isScanning = false },
-                config = if (linearOnly) {
-                    BarcodeScannerConfig(
-                        formats = BarcodeFormat.Linear,
-                        frameAspectRatio = 2f,
-                        cropGalleryImage = cropGalleryImage,
-                    )
-                } else {
-                    BarcodeScannerConfig(cropGalleryImage = cropGalleryImage)
-                },
+                config = BarcodeScannerConfig(
+                    formats = if (linearOnly) BarcodeFormat.Linear else BarcodeFormat.All,
+                    frameAspectRatio = if (linearOnly) 2f else 1f,
+                    cropGalleryImage = cropGalleryImage,
+                    beepOnScan = beep,
+                    scanMode = if (continuous) BarcodeScanMode.Continuous() else BarcodeScanMode.Single,
+                ),
                 colors = BarcodeScannerDefaults.colors(scanLine = Color(0xFF00C853)),
             )
             return
@@ -75,8 +82,7 @@ object BarcodeScannerFeature : Feature {
             subtitle = "Point the camera at a code, or pick a picture from your gallery.",
             onBack = onBack,
         ) {
-            val current = result
-            if (current == null) EmptyState() else ResultCard(current)
+            if (results.isEmpty()) EmptyState() else results.forEach { ResultCard(it) }
             SettingToggle(
                 title = "Barcodes only",
                 description = "Wide frame for product barcodes; QR codes are ignored.",
@@ -89,16 +95,28 @@ object BarcodeScannerFeature : Feature {
                 checked = cropGalleryImage,
                 onCheckedChange = { cropGalleryImage = it },
             )
+            SettingToggle(
+                title = "Scan several codes",
+                description = "Keep scanning until you tap Done.",
+                checked = continuous,
+                onCheckedChange = { continuous = it },
+            )
+            SettingToggle(
+                title = "Beep",
+                description = "Play a sound when a code is read.",
+                checked = beep,
+                onCheckedChange = { beep = it },
+            )
             Button(
                 onClick = { isScanning = true },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = MaterialTheme.shapes.medium,
             ) {
-                Text(if (current == null) "Scan code" else "Scan again", fontWeight = FontWeight.SemiBold)
+                Text(if (results.isEmpty()) "Scan code" else "Scan again", fontWeight = FontWeight.SemiBold)
             }
-            if (current != null) {
+            if (results.isNotEmpty()) {
                 OutlinedButton(
-                    onClick = { result = null },
+                    onClick = { results = emptyList() },
                     modifier = Modifier.fillMaxWidth().height(48.dp),
                     shape = MaterialTheme.shapes.medium,
                 ) { Text("Clear result") }

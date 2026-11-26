@@ -72,11 +72,33 @@ internal class BarcodeCameraController {
     fun setTorch(on: Boolean) {
         torchHandler?.invoke(on)
     }
+
+    internal var zoomHandler: ((Float) -> Unit)? = null
+
+    /** Set by the platform camera whenever the zoom changes, including by pinching. */
+    var zoomRatio by mutableStateOf(1f)
+        internal set
+
+    /** Set by the platform camera once it knows the zoom range. */
+    var minZoomRatio by mutableStateOf(1f)
+        internal set
+
+    /** Set by the platform camera once it knows the zoom range. */
+    var maxZoomRatio by mutableStateOf(1f)
+        internal set
+
+    fun setZoomRatio(ratio: Float) {
+        if (ratio.isNaN()) return
+        zoomHandler?.invoke(ratio.coerceIn(minZoomRatio, maxOf(minZoomRatio, maxZoomRatio)))
+    }
 }
 
 /**
  * Live camera preview that reads codes of [formats] inside [crop] while [isAutoScanEnabled], and
- * calls [onResult] once per enabled period with the first one found.
+ * calls [onResult] once per enabled period with the first one found that [accept] allows.
+ *
+ * [accept] is called off the main thread. [pinchToZoom] lets the user zoom with two fingers;
+ * [autoZoom] zooms in on codes that are too far away, where the platform supports it.
  */
 @Composable
 internal expect fun BarcodeCameraView(
@@ -84,6 +106,9 @@ internal expect fun BarcodeCameraView(
     formats: Set<BarcodeFormat>,
     isAutoScanEnabled: Boolean,
     crop: PreviewCrop?,
+    accept: (BarcodeScanResult) -> Boolean,
+    pinchToZoom: Boolean,
+    autoZoom: Boolean,
     onResult: (BarcodeScanResult) -> Unit,
     modifier: Modifier = Modifier
 )
@@ -99,6 +124,13 @@ internal interface PickedImage {
     /** Reads the first code of [formats] in the photo, or in [crop] of it (in pixels) when given. */
     suspend fun read(formats: Set<BarcodeFormat>, crop: IntRect? = null): BarcodeScanResult?
 }
+
+/** Decodes an encoded image (JPEG, PNG, ...) upright and scaled down, or returns null when it can't. */
+internal expect fun decodeBarcodeImage(bytes: ByteArray): PickedImage?
+
+/** Returns a function that plays a short beep, for when a code is read. */
+@Composable
+internal expect fun rememberBeep(): () -> Unit
 
 /**
  * Returns a function that opens the system photo picker. [onLoading] is called once a photo is

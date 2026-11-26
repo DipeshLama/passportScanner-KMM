@@ -18,7 +18,10 @@ import io.github.dipeshlama.barcodescanner.BarcodeFormat
 import io.github.dipeshlama.barcodescanner.BarcodeScanResult
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.ObjCAction
+import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.autoreleasepool
+import kotlinx.cinterop.usePinned
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -44,9 +47,12 @@ import platform.AVFoundation.focusMode
 import platform.AVFoundation.hasTorch
 import platform.AVFoundation.isFocusModeSupported
 import platform.AVFoundation.isTorchModeSupported
+import platform.AVFoundation.maxAvailableVideoZoomFactor
+import platform.AVFoundation.minAvailableVideoZoomFactor
 import platform.AVFoundation.minimumFocusDistance
 import platform.AVFoundation.torchMode
 import platform.AVFoundation.videoZoomFactor
+import platform.AudioToolbox.AudioServicesPlaySystemSound
 import platform.CoreGraphics.CGImageCreateWithImageInRect
 import platform.CoreGraphics.CGImageGetHeight
 import platform.CoreGraphics.CGImageGetWidth
@@ -58,6 +64,8 @@ import platform.CoreMedia.CMSampleBufferRef
 import platform.CoreVideo.CVPixelBufferGetHeight
 import platform.CoreVideo.CVPixelBufferGetWidth
 import platform.Foundation.NSData
+import platform.Foundation.NSSelectorFromString
+import platform.Foundation.dataWithBytes
 import platform.ImageIO.kCGImagePropertyOrientationRight
 import platform.PhotosUI.PHPickerConfiguration
 import platform.PhotosUI.PHPickerFilter
@@ -67,7 +75,10 @@ import platform.PhotosUI.PHPickerViewControllerDelegateProtocol
 import platform.QuartzCore.CATransaction
 import platform.UIKit.UIApplication
 import platform.UIKit.UIColor
+import platform.UIKit.UIGestureRecognizerStateBegan
+import platform.UIKit.UIGestureRecognizerStateChanged
 import platform.UIKit.UIImage
+import platform.UIKit.UIPinchGestureRecognizer
 import platform.UIKit.UIView
 import platform.UIKit.UIViewController
 import platform.Vision.VNImageRequestHandler
@@ -85,22 +96,40 @@ private const val MIN_CODE_SIZE_MM = 20.0
 private const val CODE_FILL_RATIO = 0.5
 private const val MAX_AUTO_ZOOM = 2.0
 
+/** Highest zoom offered for pinching; past this, digital zoom is too blurry to read codes. */
+private const val MAX_USER_ZOOM = 8.0
+
+/** The system "Tink" sound; it follows the silent switch. */
+private const val BEEP_SOUND_ID = 1057u
+
 @Composable
 internal actual fun BarcodeCameraView(
     controller: BarcodeCameraController,
     formats: Set<BarcodeFormat>,
     isAutoScanEnabled: Boolean,
     crop: PreviewCrop?,
+    accept: (BarcodeScanResult) -> Boolean,
+    pinchToZoom: Boolean,
+    autoZoom: Boolean,
     onResult: (BarcodeScanResult) -> Unit,
     modifier: Modifier
 ) {
+    // autoZoom isn't supported: Vision only reports codes it could read, so there's nothing to zoom
+    // in on. The camera still zooms in a little on its own when it can't focus close (see configureFocus).
     val currentOnResult by rememberUpdatedState(onResult)
+    val currentAccept by rememberUpdatedState(accept)
     val scanner = remember {
         BarcodeCaptureSession(
             onResult = { result -> currentOnResult(result) },
+            accept = { result -> currentAccept(result) },
             onTorchChanged = { hasTorch, isOn ->
                 controller.hasTorch = hasTorch
                 controller.isTorchOn = isOn
+            },
+            onZoomChanged = { ratio, min, max ->
+                controller.minZoomRatio = min
+                controller.maxZoomRatio = max
+                controller.zoomRatio = ratio
             }
         )
     }
@@ -119,8 +148,10 @@ internal actual fun BarcodeCameraView(
 
     DisposableEffect(controller, scanner) {
         controller.torchHandler = scanner::setTorch
+        controller.zoomHandler = scanner::setZoom
         onDispose {
             controller.torchHandler = null
+            controller.zoomHandler = null
             controller.isTorchOn = false
         }
     }
@@ -131,14 +162,23 @@ internal actual fun BarcodeCameraView(
     }
 
     UIKitView(
-        factory = { CameraPreviewView(scanner.previewLayer) },
+        factory = {
+            CameraPreviewView(
+                previewLayer = scanner.previewLayer,
+                zoomRatio = { controller.zoomRatio },
+                setZoomRatio = controller::setZoomRatio
+            )
+        },
+        update = { view -> view.isPinchEnabled = pinchToZoom },
         modifier = modifier
     )
 }
 
 private class BarcodeCaptureSession(
     private val onResult: (BarcodeScanResult) -> Unit,
-    private val onTorchChanged: (hasTorch: Boolean, isOn: Boolean) -> Unit
+    private val accept: (BarcodeScanResult) -> Boolean,
+    private val onTorchChanged: (hasTorch: Boolean, isOn: Boolean) -> Unit,
+    private val onZoomChanged: (ratio: Float, min: Float, max: Float) -> Unit
 ) : NSObject(), AVCaptureVideoDataOutputSampleBufferDelegateProtocol {
     private val session = AVCaptureSession()
     // Camera frames (and their OCR/decoding) run on [videoQueue]. Session setup and the torch use
@@ -191,6 +231,28 @@ private class BarcodeCaptureSession(
         }
     }
 
+    fun setZoom(ratio: Float) {
+        dispatch_async(sessionQueue) {
+            val device = device ?: return@dispatch_async
+            val zoom = ratio.toDouble().coerceIn(device.minAvailableVideoZoomFactor, maxZoom(device))
+            if (device.lockForConfiguration(null)) {
+                device.videoZoomFactor = zoom
+                device.unlockForConfiguration()
+            }
+            reportZoom(device)
+        }
+    }
+
+    private fun maxZoom(device: AVCaptureDevice): Double =
+        maxOf(device.minAvailableVideoZoomFactor, minOf(MAX_USER_ZOOM, device.maxAvailableVideoZoomFactor))
+
+    private fun reportZoom(device: AVCaptureDevice) {
+        val ratio = device.videoZoomFactor.toFloat()
+        val min = device.minAvailableVideoZoomFactor.toFloat()
+        val max = maxZoom(device).toFloat()
+        dispatch_async(dispatch_get_main_queue()) { onZoomChanged(ratio, min, max) }
+    }
+
     private fun reportTorch(device: AVCaptureDevice) {
         val hasTorch = device.hasTorch
         val isOn = device.torchMode == AVCaptureTorchModeOn
@@ -216,6 +278,7 @@ private class BarcodeCaptureSession(
         configureFocus(device)
         this.device = device
         reportTorch(device)
+        reportZoom(device)
         return true
     }
 
@@ -266,7 +329,7 @@ private class BarcodeCaptureSession(
         val uprightWidth = CVPixelBufferGetHeight(pixelBuffer).toInt()
         val uprightHeight = CVPixelBufferGetWidth(pixelBuffer).toInt()
         val region = crop.value?.toReadingRect(uprightWidth, uprightHeight)
-        val result = BarcodeReader.find(handler, formats.value, uprightWidth, uprightHeight, region) ?: return
+        val result = BarcodeReader.find(handler, formats.value, uprightWidth, uprightHeight, region, accept) ?: return
 
         if (hasDelivered.compareAndSet(0, 1)) {
             dispatch_async(dispatch_get_main_queue()) { onResult(result) }
@@ -275,11 +338,32 @@ private class BarcodeCaptureSession(
 }
 
 private class CameraPreviewView(
-    private val previewLayer: AVCaptureVideoPreviewLayer
+    private val previewLayer: AVCaptureVideoPreviewLayer,
+    private val zoomRatio: () -> Float,
+    private val setZoomRatio: (Float) -> Unit
 ) : UIView(frame = CGRectMake(0.0, 0.0, 0.0, 0.0)) {
+    private val pinch = UIPinchGestureRecognizer(target = this, action = NSSelectorFromString("handlePinch:"))
+    private var pinchStartZoom = 1f
+
+    var isPinchEnabled: Boolean
+        get() = pinch.enabled
+        set(value) {
+            pinch.enabled = value
+        }
+
     init {
         backgroundColor = UIColor.blackColor
         layer.addSublayer(previewLayer)
+        addGestureRecognizer(pinch)
+    }
+
+    @ObjCAction
+    fun handlePinch(recognizer: UIPinchGestureRecognizer) {
+        when (recognizer.state) {
+            UIGestureRecognizerStateBegan -> pinchStartZoom = zoomRatio()
+            UIGestureRecognizerStateChanged -> setZoomRatio(pinchStartZoom * recognizer.scale.toFloat())
+            else -> Unit
+        }
     }
 
     override fun layoutSubviews() {
@@ -343,6 +427,15 @@ private class PickerDelegate(
         }
     }
 }
+
+internal actual fun decodeBarcodeImage(bytes: ByteArray): PickedImage? {
+    if (bytes.isEmpty()) return null
+    val data = bytes.usePinned { NSData.dataWithBytes(it.addressOf(0), bytes.size.toULong()) }
+    return loadPickedImage(data)
+}
+
+@Composable
+internal actual fun rememberBeep(): () -> Unit = remember { { AudioServicesPlaySystemSound(BEEP_SOUND_ID) } }
 
 private fun loadPickedImage(data: NSData?): PickedImage? {
     // Rendered at scale 1, so the CGImage's pixels match the UIImage's points.
